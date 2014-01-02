@@ -8,7 +8,7 @@ module Data.Geo.Geodetic.Curve(
 ) where
 
 import Prelude(Eq, Show(..), Ord(..), Double, (.), abs, showString, showParen)
-import Data.List(intercalate)
+import Data.List(unwords)
 import Text.Printf(printf)
 import Control.Lens
 import Data.Geo.Geodetic.Azimuth
@@ -24,7 +24,7 @@ data Curve =
 -- This is to take floating-point rounding errors into account.
 instance Show Curve where
   showsPrec n (Curve d a r) =
-    showParen (n > 10) (showString (intercalate " " ["GeodeticCurve", printf "%0.4f" d, show a, show r]))
+    showParen (n > 10) (showString (unwords ["GeodeticCurve", printf "%0.4f" d, show a, show r]))
 
 -- | Construct a geodetic curve with the given parameters.
 curve ::
