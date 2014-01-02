@@ -223,14 +223,15 @@ inverse e conv start end =
       ed = whileDo iter pred' begin
       ifi p t a = if p a then t a else a
       (alpha1, alpha2) =
-        let alphaNoConverge c cp x y = vmap2 (ifi (>= 360) (subtract 360)) (if c
-                                                                              then (x, y)
-                                                                              else if cp == GT
-                                                                                then (180.0, 0.0)
-                                                                                else if cp == LT
-                                                                                  then (0.0, 180.0)
-                                                                                  else let nan = 0/0
-                                                                                        in (nan, nan))
+        let alphaNoConverge c cp x y =
+              vmap2 (ifi (>= 360) (subtract 360)) (if c
+                                                     then (x, y)
+                                                     else if cp == GT
+                                                       then (180.0, 0.0)
+                                                       else if cp == LT
+                                                         then (0.0, 180.0)
+                                                         else let nan = 0/0
+                                                               in (nan, nan))
         in alphaNoConverge (result ed == Converge) (compare phi1 phi2) 0 0
   in curve (b * a' ed * (sigma ed - deltasigma ed)) (modAzimuth alpha1) (modAzimuth alpha2)
 
