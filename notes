@@ -1,0 +1,20 @@
+Azimuth
+Bearing
+Coord         <- Latitude, Longitude, Radians
+DMS           <- Latitude, Longitude, Coord
+ElevatedCurve <- GeodeticCurve, Elevation
+Elevation
+Ellipsoid
+GeodeticCurve <- Azimuth
+GreatCircle   <- Sphere, Coord, Radians
+Haversine     <- Sphere, Coord, Radians
+Latitude
+Longitude
+Position      <- Coord, Elevation
+Radians       <- Latitude, Longitude, Bearing
+Sphere
+Vincenty      <- Ellipsoid, Coord, Bearing, Radians, GeodeticCurve
+
+
+~ Ellipsoid, Sphere, Bearing, GeodeticCurve, Azimuth
+~ haversine, great-circle, vincenty

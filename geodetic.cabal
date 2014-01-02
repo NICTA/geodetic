@@ -27,7 +27,8 @@ library
   build-depends:
                     base < 5 && >= 3
                     , lens >= 3.10
-                    , coordinate >= 0.0.3
+                    , coordinate >= 0.0.8
+                    , optional >= 0.0.1
 
   ghc-options:
                     -Wall
@@ -40,6 +41,14 @@ library
 
   exposed-modules:
                     Data.Geo.Geodetic
+                    Data.Geo.Geodetic.Azimuth
+                    Data.Geo.Geodetic.Bearing
+                    Data.Geo.Geodetic.Curve
+                    Data.Geo.Geodetic.Ellipsoid
+                    Data.Geo.Geodetic.GreatCircle
+                    Data.Geo.Geodetic.Haversine
+                    Data.Geo.Geodetic.Sphere
+                    Data.Geo.Geodetic.Vincenty
 
 test-suite doctests
   type:
