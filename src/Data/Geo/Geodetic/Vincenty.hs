@@ -223,8 +223,7 @@ inverse e conv start end =
       ed = whileDo iter pred' begin
       ifi p t a = if p a then t a else a
       (alpha1, alpha2) =
-        let alphaNoConverge :: (Fractional b0, Num b0, Ord b0) => Bool -> Ordering -> b0 -> b0 -> (b0, b0)
-            alphaNoConverge c cp x y = vmap2 (ifi (>= 360) (subtract 360)) (if c
+        let alphaNoConverge c cp x y = vmap2 (ifi (>= 360) (subtract 360)) (if c
                                                                               then (x, y)
                                                                               else if cp == GT
                                                                                 then (180.0, 0.0)
