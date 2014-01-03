@@ -32,12 +32,15 @@ import Data.Geo.Geodetic.Sphere
 -- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (sphericalLaw (6350000 ^. nSphere) fr to)) :: Maybe String
 -- Just "17081801.7377"
 sphericalLaw ::
-  Sphere
-  -> Coordinate
-  -> Coordinate
+  (HasCoordinate c1, HasCoordinate c2) =>
+  Sphere -- ^ reference sphere
+  -> c1 -- ^ start coordinate
+  -> c2 -- ^ end coordinate
   -> Double
-sphericalLaw s start end =
-  let toRadians n = n * pi / 180
+sphericalLaw s start' end' =
+  let start = start' ^. coordinate
+      end = end' ^. coordinate
+      toRadians n = n * pi / 180
       lat1 = toRadians (fracLatitude # (start ^. latitude))
       lat2 = toRadians (fracLatitude # (end ^. latitude))
       lon1 = toRadians (fracLongitude # (start ^. longitude))
@@ -52,8 +55,9 @@ sphericalLaw s start end =
 -- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (sphericalLawD fr to)) :: Maybe String
 -- Just "17128743.0669"
 sphericalLawD ::
-  Coordinate
-  -> Coordinate
+  (HasCoordinate c1, HasCoordinate c2) =>
+  c1 -- ^ start coordinate
+  -> c2 -- ^ end coordinate
   -> Double
 sphericalLawD =
   sphericalLaw earthMean
@@ -75,4 +79,4 @@ sphericalLaw' ::
     ) x) =>
     x
 sphericalLaw' =
-  optional1 sphericalLaw earthMean
+  optional1 (sphericalLaw :: Sphere -> Coordinate -> Coordinate -> Double) earthMean

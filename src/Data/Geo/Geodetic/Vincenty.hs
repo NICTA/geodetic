@@ -63,14 +63,18 @@ instance HasBearing VincentyDirectResult where
 -- >>> fmap (\c' -> direct ans convergence c' (modBearing 165.34) 4235) ((-66.093) ..#.. 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0662)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4139))) (Bearing 165.3183))
 direct ::
-  Ellipsoid
-  -> Convergence
-  -> Coordinate
-  -> Bearing
-  -> Double
+  (HasEllipsoid e, HasCoordinate c, HasBearing b) =>
+  e -- ^ reference ellipsoid
+  -> Convergence -- ^ convergence point to stop calculating
+  -> c -- ^ begin coordinate
+  -> b -- ^ bearing
+  -> Double -- ^ distance
   -> VincentyDirectResult
-direct e conv start bear dist =
-  let sMnr = e ^. semiMinor
+direct e' conv start' bear' dist =
+  let e = e' ^. ellipsoid
+      start = start' ^. coordinate
+      bear = bear' ^. bearing
+      sMnr = e ^. semiMinor
       flat = e ^. flattening
       alpha = radianBearing # bear
       cosAlpha = cos alpha
@@ -124,9 +128,10 @@ direct e conv start bear dist =
 -- >>> fmap (\c' -> directD c' (modBearing 165.34) 4235) ((-66.093) ..#.. 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0667)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4142))) (Bearing 165.3183))
 directD ::
-  Coordinate
-  -> Bearing
-  -> Double
+  (HasCoordinate c, HasBearing b) =>
+  c -- ^ begin coordinate
+  -> b -- ^ bearing
+  -> Double -- ^ distance
   -> VincentyDirectResult
 directD =
   direct wgs84 convergence
@@ -150,7 +155,7 @@ direct' ::
     ) x) =>
     x
 direct' =
-  optional2 direct wgs84 convergence
+  optional2 (direct :: Ellipsoid -> Convergence -> Coordinate -> Bearing -> Double -> VincentyDirectResult) wgs84 convergence
 
 -- | Vincenty inverse algorithm.
 --
@@ -166,13 +171,17 @@ direct' =
 -- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverse ans convergence fr to)
 -- Just (GeodeticCurve 7099229.9126 Azimuth 0.0000 Azimuth 180.0000)
 inverse ::
-  Ellipsoid
-  -> Convergence
-  -> Coordinate
-  -> Coordinate
+  (HasEllipsoid e, HasCoordinate c1, HasCoordinate c2) =>
+  e -- ^ reference ellipsoid
+  -> Convergence -- ^ convergence point to stop calculating
+  -> c1 -- ^ start coordinate
+  -> c2 -- ^ end coordinate
   -> Curve
-inverse e conv start end =
-  let b = e ^. semiMinor
+inverse e' conv start' end' =
+  let e = e' ^. ellipsoid
+      start = start' ^. coordinate
+      end = end' ^. coordinate
+      b = e ^. semiMinor
       f = e ^. flattening
       (phi1, phi2) =
         let rl k = radianLatitude # (k ^. latitude)
@@ -243,8 +252,9 @@ inverse e conv start end =
 -- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverseD fr to)
 -- Just (GeodeticCurve 7099204.2589 Azimuth 0.0000 Azimuth 180.0000)
 inverseD ::
-  Coordinate
-  -> Coordinate
+  (HasCoordinate c1, HasCoordinate c2) =>
+  c1 -- ^ start coordinate
+  -> c2 -- ^ end coordinate
   -> Curve
 inverseD =
   inverse wgs84 convergence
@@ -267,7 +277,7 @@ inverse' ::
     ) x) =>
     x
 inverse' =
-  optional2 inverse wgs84 convergence
+  optional2 (inverse :: Ellipsoid -> Convergence -> Coordinate -> Coordinate -> Curve) wgs84 convergence
 
 ---- not exported
 

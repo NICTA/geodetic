@@ -32,12 +32,15 @@ import Data.Geo.Geodetic.Sphere
 -- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (haversine (6350000 ^. nSphere) fr to)) :: Maybe String
 -- Just "17081801.7377"
 haversine ::
-  Sphere
-  -> Coordinate
-  -> Coordinate
+  (HasCoordinate c1, HasCoordinate c2) =>
+  Sphere -- ^ reference sphere
+  -> c1 -- ^ start coordinate
+  -> c2 -- ^ end coordinate
   -> Double
-haversine s start end =
-  let lat1 = fracLatitude # (start ^. latitude)
+haversine s start' end' =
+  let start = start' ^. coordinate
+      end = end' ^. coordinate
+      lat1 = fracLatitude # (start ^. latitude)
       lat2 = fracLatitude # (end ^. latitude)
       toRadians n = n * pi / 180
       dlat = (toRadians (lat1 - lat2)) / 2
@@ -56,8 +59,9 @@ haversine s start end =
 -- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (haversineD fr to)) :: Maybe String
 -- Just "17128743.0669"
 haversineD ::
-  Coordinate
-  -> Coordinate
+  (HasCoordinate c1, HasCoordinate c2) =>
+  c1 -- ^ start coordinate
+  -> c2 -- ^ end coordinate
   -> Double
 haversineD =
   haversine earthMean
@@ -79,4 +83,4 @@ haversine' ::
     ) x) =>
     x
 haversine' =
-  optional1 haversine earthMean
+  optional1 (haversine :: Sphere -> Coordinate -> Coordinate -> Double) earthMean
