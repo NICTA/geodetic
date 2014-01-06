@@ -10,7 +10,7 @@ module Data.Geo.Geodetic.Curve(
 import Prelude(Eq, Show(..), Ord(..), Double, (.), abs, showString, showParen)
 import Data.List(unwords)
 import Text.Printf(printf)
-import Control.Lens
+import Control.Lens(Lens', lens)
 import Data.Geo.Geodetic.Azimuth
 
 data Curve =
