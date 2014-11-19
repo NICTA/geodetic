@@ -40,7 +40,7 @@ data VincentyDirectResult =
     Coordinate
     Bearing
   deriving (Eq, Ord, Show)
-
+{-
 instance HasCoordinate VincentyDirectResult where
   coordinate =
     lens (\(VincentyDirectResult c _) -> c) (\(VincentyDirectResult _ b) c -> VincentyDirectResult c b)
@@ -48,7 +48,7 @@ instance HasCoordinate VincentyDirectResult where
 instance HasBearing VincentyDirectResult where
   bearing =
     lens (\(VincentyDirectResult _ b) -> b) (\(VincentyDirectResult c _) b -> VincentyDirectResult c b)
-
+-}
 -- | Vincenty direct algorithm.
 --
 -- >>> fmap (\c' -> direct wgs84 convergence c' (modBearing 165.34) 4235) (27.812 ..#.. 154.295)
@@ -62,6 +62,7 @@ instance HasBearing VincentyDirectResult where
 --
 -- >>> fmap (\c' -> direct ans convergence c' (modBearing 165.34) 4235) ((-66.093) ..#.. 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0662)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4139))) (Bearing 165.3183))
+{-
 direct ::
   (HasEllipsoid e, HasCoordinate c, HasBearing b) =>
   e -- ^ reference ellipsoid
@@ -70,16 +71,17 @@ direct ::
   -> b -- ^ bearing
   -> Double -- ^ distance
   -> VincentyDirectResult
+-}
 direct e' conv start' bear' dist =
   let e = e' ^. ellipsoid
-      start = start' ^. coordinate
-      bear = bear' ^. bearing
+      start = undef -- start' ^. coordinate
+      bear = undef -- bear' ^. bearing
       sMnr = e ^. semiMinor
       flat = e ^. flattening
       alpha = radianBearing # bear
       cosAlpha = cos alpha
       sinAlpha = sin alpha
-      tanu1 = (1.0 - flat) * tan (radianLatitude # (start ^. latitude))
+      tanu1 = undef -- (1.0 - flat) * tan (radianLatitude # (start ^. latitude))
       cosu1 = 1.0 / sqrt (1.0 + square tanu1)
       sinu1 = tanu1 * cosu1
       sigma1 = atan2 tanu1 cosAlpha
@@ -109,10 +111,10 @@ direct e' conv start' bear' dist =
       cc = cosu1 * cosSigma
       ccca = cc * cosAlpha
       sss = sinu1 * sinSigma
-      latitude' = let r = atan2 (sinu1 * cosSigma + cosu1 * sinSigma * cosAlpha) ((1.0 - flat) * sqrt (sin2Alpha + (sss - ccca) ** 2.0))
-                  in fromMaybe (error ("Invariant not met. Latitude in radians not within range " ++ show r)) (r ^? radianLatitude)
-      longitude' = let r = fracLongitude # (start ^. longitude) + ((atan2 (sinSigma * sinAlpha) (cc - sss * cosAlpha) - (1 - c) * flat * csa * (sigma'' + c * sinSigma * (cosSigmaM2 + c * cosSigma * (-1 + 2 * cos2SigmaM2)))) * 180 / pi)
-                    in fromMaybe (error ("Invariant not met. Longitude in radians not within range " ++ show r)) (r ^? fracLongitude)
+      latitude' = let r = undef -- atan2 (sinu1 * cosSigma + cosu1 * sinSigma * cosAlpha) ((1.0 - flat) * sqrt (sin2Alpha + (sss - ccca) ** 2.0))
+                  in undef -- fromMaybe (error ("Invariant not met. Latitude in radians not within range " ++ show r)) (r ^? radianLatitude)
+      longitude' = let r = undef -- fracLongitude # (start ^. longitude) + ((atan2 (sinSigma * sinAlpha) (cc - sss * cosAlpha) - (1 - c) * flat * csa * (sigma'' + c * sinSigma * (cosSigmaM2 + c * cosSigma * (-1 + 2 * cos2SigmaM2)))) * 180 / pi)
+                   in undef -- fromMaybe (error ("Invariant not met. Longitude in radians not within range " ++ show r)) (r ^? fracLongitude)
   in VincentyDirectResult
        (latitude' .#. longitude')
        (
@@ -127,14 +129,16 @@ direct e' conv start' bear' dist =
 --
 -- >>> fmap (\c' -> directD c' (modBearing 165.34) 4235) ((-66.093) ..#.. 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0667)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4142))) (Bearing 165.3183))
+{-
 directD ::
   (HasCoordinate c, HasBearing b) =>
   c -- ^ begin coordinate
   -> b -- ^ bearing
   -> Double -- ^ distance
   -> VincentyDirectResult
+-}  
 directD =
-  direct wgs84 convergence
+  undef -- direct wgs84 convergence
 
 -- | Vincenty direct algorithm with an optionally applied default ellipsoid of WGS84 and standard convergence.
 --
@@ -170,6 +174,7 @@ direct' =
 --
 -- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverse ans convergence fr to)
 -- Just (GeodeticCurve 7099229.9126 Azimuth 0.0000 Azimuth 180.0000)
+{-
 inverse ::
   (HasEllipsoid e, HasCoordinate c1, HasCoordinate c2) =>
   e -- ^ reference ellipsoid
@@ -177,20 +182,23 @@ inverse ::
   -> c1 -- ^ start coordinate
   -> c2 -- ^ end coordinate
   -> Curve
+-}
 inverse e' conv start' end' =
+  undef
+  {-
   let e = e' ^. ellipsoid
-      start = start' ^. coordinate
-      end = end' ^. coordinate
+      start = undef -- start' ^. coordinate
+      end = undef -- end' ^. coordinate
       b = e ^. semiMinor
       f = e ^. flattening
       (phi1, phi2) =
-        let rl k = radianLatitude # (k ^. latitude)
+        let rl k = undef -- radianLatitude # (k ^. latitude)
         in (rl start, rl end)
       a2b2b2 =
         let ss z = square (z e)
         in ss (^. semiMajor) / ss (^. semiMinor) - 1
       omega =
-        let rl k = radianLongitude # (k ^. longitude)
+        let rl k = undef -- radianLongitude # (k ^. longitude)
         in rl end - rl start
       (u1, u2) =
         let at = atan . ((1 - f) *) . tan
@@ -243,6 +251,7 @@ inverse e' conv start' end' =
                                                                in (nan, nan))
         in alphaNoConverge (result ed == Converge) (compare phi1 phi2) 0 0
   in curve (b * a' ed * (sigma ed - deltasigma ed)) (modAzimuth alpha1) (modAzimuth alpha2)
+-}
 
 -- | Vincenty inverse algorithm with a default ellipsoid of WGS84 and standard convergence.
 --
@@ -251,13 +260,17 @@ inverse e' conv start' end' =
 --
 -- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverseD fr to)
 -- Just (GeodeticCurve 7099204.2589 Azimuth 0.0000 Azimuth 180.0000)
+{-
 inverseD ::
   (HasCoordinate c1, HasCoordinate c2) =>
   c1 -- ^ start coordinate
   -> c2 -- ^ end coordinate
   -> Curve
+-}
 inverseD =
-  inverse wgs84 convergence
+  undef -- inverse wgs84 convergence
+
+undef = undef  
 
 -- | Vincenty inverse algorithm with an optionally applied default ellipsoid of WGS84 and standard convergence.
 --

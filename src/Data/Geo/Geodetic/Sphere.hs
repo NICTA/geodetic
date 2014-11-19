@@ -45,6 +45,7 @@ earthMean ::
 earthMean =
   Sphere 6367450
 
+
 class HasSphere t where
   sphere ::
     Lens' t Sphere

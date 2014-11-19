@@ -29,8 +29,8 @@ library
 
   build-depends:
                     base < 5 && >= 3
-                    , lens >= 3.10
-                    , coordinate >= 0.0.8
+                    , lens >= 4.0
+                    , coordinate >= 0.0.16
                     , optional >= 0.0.1
 
   ghc-options:

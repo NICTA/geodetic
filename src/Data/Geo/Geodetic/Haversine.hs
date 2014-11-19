@@ -31,20 +31,22 @@ import Data.Geo.Geodetic.Sphere
 --
 -- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (haversine (6350000 ^. nSphere) fr to)) :: Maybe String
 -- Just "17081801.7377"
+{-
 haversine ::
   (HasCoordinate c1, HasCoordinate c2) =>
   Sphere -- ^ reference sphere
   -> c1 -- ^ start coordinate
   -> c2 -- ^ end coordinate
   -> Double
+  -}
 haversine s start' end' =
-  let start = start' ^. coordinate
-      end = end' ^. coordinate
-      lat1 = fracLatitude # (start ^. latitude)
-      lat2 = fracLatitude # (end ^. latitude)
+  let start = undef -- start' ^. coordinate
+      end = undef -- end' ^. coordinate
+      lat1 = undef -- fracLatitude # (start ^. latitude)
+      lat2 = undef -- fracLatitude # (end ^. latitude)
       toRadians n = n * pi / 180
       dlat = (toRadians (lat1 - lat2)) / 2
-      dlon = (toRadians (fracLongitude # (start ^. longitude) - fracLongitude # (end ^. longitude))) / 2
+      dlon = undef -- (toRadians (fracLongitude # (start ^. longitude) - fracLongitude # (end ^. longitude))) / 2
       cosr = cos . toRadians
       square x = x * x
       a = square (sin dlat) + cosr lat1 * cosr lat2 * square (sin (dlon))
@@ -58,13 +60,17 @@ haversine s start' end' =
 --
 -- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (haversineD fr to)) :: Maybe String
 -- Just "17128743.0669"
+{-
 haversineD ::
   (HasCoordinate c1, HasCoordinate c2) =>
   c1 -- ^ start coordinate
   -> c2 -- ^ end coordinate
   -> Double
+  -}
 haversineD =
-  haversine earthMean
+  undef -- haversine earthMean
+
+undef = undef  
 
 -- | Haversine algorithm with an optionally applied default sphere of the earth mean.
 --
