@@ -1,12 +1,16 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+
 module Data.Geo.Geodetic.Ellipsoid(
   -- * Data type
   Ellipsoid
-, HasEllipsoid(..)
+, AsEllipsoid(..)
   -- * Ellipsoid properties
-, HasSemiMajor(..)
-, HasSemiMinor(..)
-, HasFlattening(..)
-, HasInverseFlattening(..)
+, AsSemiMajor(..)
+, AsSemiMinor(..)
+, AsFlattening(..)
+, AsInverseFlattening(..)
   -- * Ellipsoid construction
 , semiMajorFlattening
 , semiMinorFlattening
@@ -30,8 +34,8 @@ module Data.Geo.Geodetic.Ellipsoid(
 , clarke1880
 ) where
 
-import Prelude(Eq, Ord, Show, Num(..), Fractional(..), Double, id)
-import Control.Lens(Lens', lens)
+import Prelude(Eq, Ord, Show, Num(..), Fractional(..), Double, id, Functor)
+import Control.Lens(Optic', lens)
 
 data Ellipsoid =
   Ellipsoid
@@ -67,61 +71,61 @@ semiMinorInverseFlattening ::
 semiMinorInverseFlattening s f =
   semiMinorFlattening s (1/f)
 
-class HasEllipsoid t where
-  ellipsoid ::
-    Lens' t Ellipsoid
+class AsEllipsoid p f s where
+  _Ellipsoid ::
+    Optic' p f s Ellipsoid    
 
-instance HasEllipsoid Ellipsoid where
-  ellipsoid =
+instance AsEllipsoid p f Ellipsoid where
+  _Ellipsoid =
     id
 
-class HasSemiMajor t where
-  semiMajor ::
-    Lens' t Double
+class AsSemiMajor p f s where
+  _SemiMajor ::
+    Optic' p f s Double
 
-instance HasSemiMajor Double where
-  semiMajor =
+instance AsSemiMajor p f Double where
+  _SemiMajor =
     id
 
-instance HasSemiMajor Ellipsoid where
-  semiMajor =
-    lens (\(Ellipsoid s _) -> s) (\(Ellipsoid _ f) s -> Ellipsoid s f)
+instance (p ~ (->), Functor f) => AsSemiMajor p f Ellipsoid where
+  _SemiMajor =
+     lens (\(Ellipsoid s _) -> s) (\(Ellipsoid _ f) s -> Ellipsoid s f)   
 
-class HasSemiMinor t where
-  semiMinor ::
-    Lens' t Double
+class AsSemiMinor p f s where
+  _SemiMinor ::
+    Optic' p f s Double
 
-instance HasSemiMinor Double where
-  semiMinor =
+instance AsSemiMinor p f Double where
+  _SemiMinor =
+    id    
+
+instance (p ~ (->), Functor f) => AsSemiMinor p f Ellipsoid where
+  _SemiMinor =
+     lens (\(Ellipsoid s f) -> (1.0 - f) * s) (\(Ellipsoid _ f) s -> Ellipsoid (s * f - 1.0) f)
+
+class AsFlattening p f s where
+  _Flattening ::
+    Optic' p f s Double
+
+instance AsFlattening p f Double where
+  _Flattening =
     id
 
-instance HasSemiMinor Ellipsoid where
-  semiMinor =
-    lens (\(Ellipsoid s f) -> (1.0 - f) * s) (\(Ellipsoid _ f) s -> Ellipsoid (s * f - 1.0) f)
-
-class HasFlattening t where
-  flattening ::
-    Lens' t Double
-
-instance HasFlattening Double where
-  flattening =
-    id
-
-instance HasFlattening Ellipsoid where
-  flattening =
+instance (p ~ (->), Functor f) => AsFlattening p f Ellipsoid where
+  _Flattening =
     lens (\(Ellipsoid _ f) -> f) (\(Ellipsoid s _) f -> Ellipsoid s f)
 
-class HasInverseFlattening t where
-  inverseFlattening ::
-    Lens' t Double
+class AsInverseFlattening p f s where
+  _InverseFlattening ::
+    Optic' p f s Double
 
-instance HasInverseFlattening Double where
-  inverseFlattening =
+instance AsInverseFlattening p f Double where
+  _InverseFlattening =
     id
 
-instance HasInverseFlattening Ellipsoid where
-  inverseFlattening =
-    lens (\(Ellipsoid _ f) -> 1/f) (\(Ellipsoid s _) f -> Ellipsoid s (1/f))
+instance (p ~ (->), Functor f) => AsInverseFlattening p f Ellipsoid where
+  _InverseFlattening =
+    lens (\(Ellipsoid _ f) -> f) (\(Ellipsoid s _) f -> Ellipsoid s f)
 
 wgs84 ::
   Ellipsoid

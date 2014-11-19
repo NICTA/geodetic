@@ -1,4 +1,7 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 
 -- | An implementation of Thaddeus Vincenty's direct and inverse geodetic algorithms. <http://www.ngs.noaa.gov/PUBS_LIB/inverse.pdf>
 module Data.Geo.Geodetic.Vincenty(
@@ -13,8 +16,10 @@ module Data.Geo.Geodetic.Vincenty(
 , inverse'
 ) where
 
-import Prelude(Eq(..), Show(..), Ord(..), Num(..), Floating(..), Fractional(..), Double, Int, Bool, Ordering(..), subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, (.), (++), (&&), ($!), error)
-import Control.Lens(lens, (^.), (#), (^?))
+import Prelude(Eq(..), Show(..), Ord(..), Num(..), Floating(..), Fractional(..), Double, Int, Bool, Ordering(..), subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, (.), (++), (&&), ($!), error, id)
+import Control.Applicative(Const)
+import Control.Lens(Profunctor, Prism', Optic', Iso', (^.), (#), (^?), iso, _1, _2, from)
+import Data.Functor(Functor)
 import Data.Maybe(fromMaybe)
 import System.Args.Optional(Optional2(..))
 import Data.Geo.Coordinate
@@ -41,29 +46,43 @@ data VincentyDirectResult =
     Bearing
   deriving (Eq, Ord, Show)
 
-instance HasCoordinate VincentyDirectResult where
-  coordinate =
-    lens (\(VincentyDirectResult c _) -> c) (\(VincentyDirectResult _ b) c -> VincentyDirectResult c b)
+class AsVincentyDirectResult p f s where
+  _VincentyDirectResult ::
+    Optic' p f s VincentyDirectResult
 
-instance HasBearing VincentyDirectResult where
-  bearing =
-    lens (\(VincentyDirectResult _ b) -> b) (\(VincentyDirectResult c _) b -> VincentyDirectResult c b)
+instance AsVincentyDirectResult p f VincentyDirectResult where
+  _VincentyDirectResult =
+    id
+
+instance (Profunctor p, Functor f) => AsVincentyDirectResult p f (Coordinate, Bearing) where
+  _VincentyDirectResult =
+    iso
+      (\(c, b) -> VincentyDirectResult c b)
+      (\(VincentyDirectResult c b) -> (c, b))
+
+instance (p ~ (->), Functor f) => AsCoordinate p f VincentyDirectResult where
+  _Coordinate =
+    from (_VincentyDirectResult :: Iso' (Coordinate, Bearing) VincentyDirectResult) . _1
+
+instance (p ~ (->), Functor f) => AsBearing p f VincentyDirectResult where
+  _Bearing =
+    from (_VincentyDirectResult :: Iso' (Coordinate, Bearing) VincentyDirectResult) . _2
 
 -- | Vincenty direct algorithm.
 --
--- >>> fmap (\c' -> direct wgs84 convergence c' (modBearing 165.34) 4235) (27.812 ..#.. 154.295)
+-- >>> fmap (\c' -> direct wgs84 convergence c' (modBearing 165.34) 4235) (27.812 <°> 154.295)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude 27) (Minutes 46) (Seconds 30.0981)) (Longitude (DegreesLongitude 154) (Minutes 18) (Seconds 21.1466))) (Bearing 165.3451))
 --
--- >>> fmap (\c' -> direct wgs84 convergence c' (modBearing 165.34) 4235) ((-66.093) ..#.. 12.84)
+-- >>> fmap (\c' -> direct wgs84 convergence c' (modBearing 165.34) 4235) ((-66.093) <°> 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0667)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4142))) (Bearing 165.3183))
 --
--- >>> fmap (\c' -> direct ans convergence c' (modBearing 165.34) 4235) (27.812 ..#.. 154.295)
+-- >>> fmap (\c' -> direct ans convergence c' (modBearing 165.34) 4235) (27.812 <°> 154.295)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude 27) (Minutes 46) (Seconds 30.0986)) (Longitude (DegreesLongitude 154) (Minutes 18) (Seconds 21.1464))) (Bearing 165.3451))
 --
--- >>> fmap (\c' -> direct ans convergence c' (modBearing 165.34) 4235) ((-66.093) ..#.. 12.84)
+-- >>> fmap (\c' -> direct ans convergence c' (modBearing 165.34) 4235) ((-66.093) <°> 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0662)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4139))) (Bearing 165.3183))
 direct ::
-  (HasEllipsoid e, HasCoordinate c, HasBearing b) =>
+  (AsCoordinate (->) (Const Coordinate) c, AsBearing (->) (Const Bearing) b, AsEllipsoid (->) (Const Ellipsoid) e) =>
   e -- ^ reference ellipsoid
   -> Convergence -- ^ convergence point to stop calculating
   -> c -- ^ begin coordinate
@@ -71,22 +90,24 @@ direct ::
   -> Double -- ^ distance
   -> VincentyDirectResult
 direct e' conv start' bear' dist =
-  let e = e' ^. ellipsoid
-      start = start' ^. coordinate
-      bear = bear' ^. bearing
-      sMnr = e ^. semiMinor
-      flat = e ^. flattening
+  let radianLatitude :: Prism' Double Latitude
+      radianLatitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Latitude
+      e = e' ^. _Ellipsoid
+      start = start' ^. _Coordinate
+      bear = bear' ^. _Bearing
+      sMnr = e ^. _SemiMinor
+      flat = e ^. _Flattening
       alpha = radianBearing # bear
       cosAlpha = cos alpha
       sinAlpha = sin alpha
-      tanu1 = (1.0 - flat) * tan (radianLatitude # (start ^. latitude))
+      tanu1 = (1.0 - flat) * tan (radianLatitude # (start ^. _Latitude))
       cosu1 = 1.0 / sqrt (1.0 + square tanu1)
       sinu1 = tanu1 * cosu1
       sigma1 = atan2 tanu1 cosAlpha
       csa = cosu1 * sinAlpha
       sin2Alpha = square csa
       cos2Alpha = 1 - sin2Alpha
-      ab d f g h i = let s = cos2Alpha * (square (e ^. semiMajor / sMnr) - 1)
+      ab d f g h i = let s = cos2Alpha * (square (e ^. _SemiMajor / sMnr) - 1)
                      in (s / d) * (f + s * (g + s * (h - i * s)))
       a = 1 + ab 16384 4096 (-768) 320 175
       b = ab 1024 256 (-128) 74 47
@@ -111,8 +132,8 @@ direct e' conv start' bear' dist =
       sss = sinu1 * sinSigma
       latitude' = let r = atan2 (sinu1 * cosSigma + cosu1 * sinSigma * cosAlpha) ((1.0 - flat) * sqrt (sin2Alpha + (sss - ccca) ** 2.0))
                   in fromMaybe (error ("Invariant not met. Latitude in radians not within range " ++ show r)) (r ^? radianLatitude)
-      longitude' = let r = fracLongitude # (start ^. longitude) + ((atan2 (sinSigma * sinAlpha) (cc - sss * cosAlpha) - (1 - c) * flat * csa * (sigma'' + c * sinSigma * (cosSigmaM2 + c * cosSigma * (-1 + 2 * cos2SigmaM2)))) * 180 / pi)
-                    in fromMaybe (error ("Invariant not met. Longitude in radians not within range " ++ show r)) (r ^? fracLongitude)
+      longitude' = let r = _Longitude # (start ^. _Longitude) + ((atan2 (sinSigma * sinAlpha) (cc - sss * cosAlpha) - (1 - c) * flat * csa * (sigma'' + c * sinSigma * (cosSigmaM2 + c * cosSigma * (-1 + 2 * cos2SigmaM2)))) * 180 / pi)
+                   in fromMaybe (error ("Invariant not met. Longitude in radians not within range " ++ show r)) (r ^? _Longitude)
   in VincentyDirectResult
        (latitude' .#. longitude')
        (
@@ -122,13 +143,13 @@ direct e' conv start' bear' dist =
 
 -- | Vincenty direct algorithm with a default ellipsoid of WGS84 and standard convergence.
 --
--- >>> fmap (\c' -> directD c' (modBearing 165.34) 4235) (27.812 ..#.. 154.295)
+-- >>> fmap (\c' -> directD c' (modBearing 165.34) 4235) (27.812 <°> 154.295)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude 27) (Minutes 46) (Seconds 30.0981)) (Longitude (DegreesLongitude 154) (Minutes 18) (Seconds 21.1466))) (Bearing 165.3451))
 --
--- >>> fmap (\c' -> directD c' (modBearing 165.34) 4235) ((-66.093) ..#.. 12.84)
+-- >>> fmap (\c' -> directD c' (modBearing 165.34) 4235) ((-66.093) <°> 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0667)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4142))) (Bearing 165.3183))
 directD ::
-  (HasCoordinate c, HasBearing b) =>
+  (AsCoordinate (->) (Const Coordinate) c, AsBearing (->) (Const Bearing) b) =>
   c -- ^ begin coordinate
   -> b -- ^ bearing
   -> Double -- ^ distance
@@ -138,10 +159,10 @@ directD =
 
 -- | Vincenty direct algorithm with an optionally applied default ellipsoid of WGS84 and standard convergence.
 --
--- >>> fmap (\c' -> direct' c' (modBearing 165.34) (4235 :: Double) :: VincentyDirectResult) (27.812 ..#.. 154.295)
+-- >>> fmap (\c' -> direct' c' (modBearing 165.34) (4235 :: Double) :: VincentyDirectResult) (27.812 <°> 154.295)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude 27) (Minutes 46) (Seconds 30.0981)) (Longitude (DegreesLongitude 154) (Minutes 18) (Seconds 21.1466))) (Bearing 165.3451))
 --
--- >>> fmap (\c' -> direct' c' (modBearing 165.34) (4235 :: Double) :: VincentyDirectResult) ((-66.093) ..#.. 12.84)
+-- >>> fmap (\c' -> direct' c' (modBearing 165.34) (4235 :: Double) :: VincentyDirectResult) ((-66.093) <°> 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0667)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4142))) (Bearing 165.3183))
 direct' ::
   (Optional2
@@ -159,38 +180,42 @@ direct' =
 
 -- | Vincenty inverse algorithm.
 --
--- >>> do fr <- 27.812 ..#.. 154.295; to <- (-66.093) ..#.. 12.84; return (inverse wgs84 convergence fr to)
+-- >>> do fr <- 27.812 <°> 154.295; to <- (-66.093) <°> 12.84; return (inverse wgs84 convergence fr to)
 -- Just (GeodeticCurve 14998576.9860 Azimuth 180.0000 Azimuth 0.0000)
 --
--- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverse wgs84 convergence fr to)
+-- >>> do fr <- 27.812 <°> 154.295; to <- 87.7769 <°> 19.944; return (inverse wgs84 convergence fr to)
 -- Just (GeodeticCurve 7099204.2589 Azimuth 0.0000 Azimuth 180.0000)
 --
--- >>> do fr <- 27.812 ..#.. 154.295; to <- (-66.093) ..#.. 12.84; return (inverse ans convergence fr to)
+-- >>> do fr <- 27.812 <°> 154.295; to <- (-66.093) <°> 12.84; return (inverse ans convergence fr to)
 -- Just (GeodeticCurve 14998630.4056 Azimuth 180.0000 Azimuth 0.0000)
 --
--- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverse ans convergence fr to)
+-- >>> do fr <- 27.812 <°> 154.295; to <- 87.7769 <°> 19.944; return (inverse ans convergence fr to)
 -- Just (GeodeticCurve 7099229.9126 Azimuth 0.0000 Azimuth 180.0000)
 inverse ::
-  (HasEllipsoid e, HasCoordinate c1, HasCoordinate c2) =>
+  (AsCoordinate (->) (Const Coordinate) start, AsCoordinate (->) (Const Coordinate) end, AsEllipsoid (->) (Const Ellipsoid) e) =>
   e -- ^ reference ellipsoid
   -> Convergence -- ^ convergence point to stop calculating
-  -> c1 -- ^ start coordinate
-  -> c2 -- ^ end coordinate
+  -> start -- ^ start coordinate
+  -> end -- ^ end coordinate
   -> Curve
 inverse e' conv start' end' =
-  let e = e' ^. ellipsoid
-      start = start' ^. coordinate
-      end = end' ^. coordinate
-      b = e ^. semiMinor
-      f = e ^. flattening
+  let radianLatitude :: Prism' Double Latitude
+      radianLatitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Latitude
+      radianLongitude :: Prism' Double Longitude
+      radianLongitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Longitude
+      e = e' ^. _Ellipsoid
+      start = start' ^. _Coordinate
+      end = end' ^. _Coordinate
+      b = e ^. _SemiMinor
+      f = e ^. _Flattening
       (phi1, phi2) =
-        let rl k = radianLatitude # (k ^. latitude)
+        let rl k = radianLatitude # (k ^. _Latitude)
         in (rl start, rl end)
       a2b2b2 =
         let ss z = square (z e)
-        in ss (^. semiMajor) / ss (^. semiMinor) - 1
+        in ss (^. _SemiMajor) / ss (^. _SemiMinor) - 1
       omega =
-        let rl k = radianLongitude # (k ^. longitude)
+        let rl k = radianLongitude # (k ^. _Longitude)
         in rl end - rl start
       (u1, u2) =
         let at = atan . ((1 - f) *) . tan
@@ -246,25 +271,25 @@ inverse e' conv start' end' =
 
 -- | Vincenty inverse algorithm with a default ellipsoid of WGS84 and standard convergence.
 --
--- >>> do fr <- 27.812 ..#.. 154.295; to <- (-66.093) ..#.. 12.84; return (inverseD fr to)
+-- >>> do fr <- 27.812 <°> 154.295; to <- (-66.093) <°> 12.84; return (inverseD fr to)
 -- Just (GeodeticCurve 14998576.9860 Azimuth 180.0000 Azimuth 0.0000)
 --
--- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverseD fr to)
+-- >>> do fr <- 27.812 <°> 154.295; to <- 87.7769 <°> 19.944; return (inverseD fr to)
 -- Just (GeodeticCurve 7099204.2589 Azimuth 0.0000 Azimuth 180.0000)
 inverseD ::
-  (HasCoordinate c1, HasCoordinate c2) =>
-  c1 -- ^ start coordinate
-  -> c2 -- ^ end coordinate
+  (AsCoordinate (->) (Const Coordinate) start, AsCoordinate (->) (Const Coordinate) end) =>
+  start -- ^ start coordinate
+  -> end -- ^ end coordinate
   -> Curve
 inverseD =
   inverse wgs84 convergence
 
 -- | Vincenty inverse algorithm with an optionally applied default ellipsoid of WGS84 and standard convergence.
 --
--- >>> do fr <- 27.812 ..#.. 154.295; to <- (-66.093) ..#.. 12.84; return (inverse' fr to :: Curve)
+-- >>> do fr <- 27.812 <°> 154.295; to <- (-66.093) <°> 12.84; return (inverse' fr to :: Curve)
 -- Just (GeodeticCurve 14998576.9860 Azimuth 180.0000 Azimuth 0.0000)
 --
--- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverse' fr to :: Curve)
+-- >>> do fr <- 27.812 <°> 154.295; to <- 87.7769 <°> 19.944; return (inverse' fr to :: Curve)
 -- Just (GeodeticCurve 7099204.2589 Azimuth 0.0000 Azimuth 180.0000)
 inverse' ::
   (Optional2

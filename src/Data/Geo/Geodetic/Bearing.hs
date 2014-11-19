@@ -1,15 +1,18 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 -- | A bearing in degrees between 0 and 360.
 module Data.Geo.Geodetic.Bearing(
   Bearing
-, HasBearing(..)
+, AsBearing(..)
 , modBearing
-, degreeBearing
 , radianBearing
 ) where
 
+import Control.Applicative(Applicative)
 import Prelude(Double, Bool(..), Eq, Show(..), Num(..), Fractional(..), Ord(..), id, (&&), (++), (.), showString, showParen, pi)
 import Data.Maybe(Maybe(..))
-import Control.Lens(Prism', Lens', prism', iso)
+import Control.Lens(Choice, Optic', Prism', prism', iso)
 import Text.Printf(printf)
 import Data.Fixed(mod')
 
@@ -54,33 +57,6 @@ modBearing ::
 modBearing x =
   Bearing (x `mod'` 360)
 
--- | A prism on bearing to a double between 0 inclusive and 360 exclusive.
---
--- >>> 7 ^? degreeBearing
--- Just (Bearing 7.0000)
---
--- >>> 0 ^? degreeBearing
--- Just (Bearing 0.0000)
---
--- >>> 359 ^? degreeBearing
--- Just (Bearing 359.0000)
---
--- >>> 359.997 ^? degreeBearing
--- Just (Bearing 359.9970)
---
--- >>> 360 ^? degreeBearing
--- Nothing
---
--- prop> all (\m -> degreeBearing # m == n) (n ^? degreeBearing)
-degreeBearing ::
-  Prism' Double Bearing
-degreeBearing =
-  prism'
-    (\(Bearing i) -> i)
-    (\i -> case i >= 0 && i < 360 of
-             True -> Just (Bearing i)
-             False -> Nothing)
-
 -- | A prism on bearing to a double between 0 and π exclusive.
 --
 -- >>> (2 * pi - 0.0000000001) ^? radianBearing
@@ -106,12 +82,39 @@ degreeBearing =
 radianBearing ::
   Prism' Double Bearing
 radianBearing =
-  iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . degreeBearing
+  iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Bearing
 
-class HasBearing t where
-  bearing ::
-    Lens' t Bearing
+class AsBearing p f s where
+  _Bearing ::
+    Optic' p f s Bearing
 
-instance HasBearing Bearing where
-  bearing =
+instance AsBearing p f Bearing where
+  _Bearing =
     id
+
+-- | A prism on bearing to a double between 0 inclusive and 360 exclusive.
+--
+-- >>> (7 :: Double) ^? _Bearing
+-- Just (Bearing 7.0000)
+--
+-- >>> (0 :: Double) ^? _Bearing
+-- Just (Bearing 0.0000)
+--
+-- >>> (359 :: Double) ^? _Bearing
+-- Just (Bearing 359.0000)
+--
+-- >>> (359.997 :: Double) ^? _Bearing
+-- Just (Bearing 359.9970)
+--
+-- >>> (360 :: Double) ^? _Bearing
+-- Nothing
+--
+-- prop> all (\m -> _Bearing # m == n) ((n :: Double) ^? _Bearing)
+instance (Choice p, Applicative f) => AsBearing p f Double where
+  _Bearing =
+    prism'
+      (\(Bearing i) -> i)
+      (\i -> case i >= 0 && i < 360 of
+               True -> Just (Bearing i)
+               False -> Nothing)
+

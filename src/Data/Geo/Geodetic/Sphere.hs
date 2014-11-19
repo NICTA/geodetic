@@ -1,13 +1,17 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+
+
 -- | A sphere with a radius in metres.
 module Data.Geo.Geodetic.Sphere(
   Sphere
-, HasSphere(..)
-, nSphere
+, AsSphere(..)
 , earthMean
 ) where
 
-import Prelude(Double, Bool(..), Eq, Show(..), Ord(..), id, (&&), (++), (.), abs, showParen, showString)
-import Control.Lens(Iso', Lens', iso)
+import Prelude(Double, Eq, Show(..), Ord(..), id, (++), showParen, showString)
+import Control.Lens(Optic', Profunctor, iso)
+import Data.Functor(Functor)
 import Text.Printf(printf)
 
 -- $setup
@@ -25,30 +29,31 @@ instance Show Sphere where
   showsPrec n (Sphere d) =
     showParen (n > 10) (showString ("Sphere " ++ printf "%0.4f" d))
 
--- | An isomorphism on sphere to a double.
---
--- >>> 7 ^. nSphere
--- Sphere 7.0000
---
--- >>> 0 ^. nSphere
--- Sphere 0.0000
---
--- >>> (-7) ^. nSphere
--- Sphere -7.0000
-nSphere ::
-  Iso' Double Sphere
-nSphere =
-  iso Sphere (\(Sphere d) -> d)
-
 earthMean ::
   Sphere
 earthMean =
   Sphere 6367450
 
-class HasSphere t where
-  sphere ::
-    Lens' t Sphere
+class AsSphere p f s where
+  _Sphere ::
+    Optic' p f s Sphere
 
-instance HasSphere Sphere where
-  sphere =
+instance AsSphere p f Sphere where
+  _Sphere =
     id
+
+-- | An isomorphism on sphere to a double.
+--
+-- >>> (7 :: Double) ^. _Sphere
+-- Sphere 7.0000
+--
+-- >>> (0 :: Double) ^. _Sphere
+-- Sphere 0.0000
+--
+-- >>> (-7 :: Double) ^. _Sphere
+-- Sphere -7.0000
+instance (Functor f, Profunctor p) => AsSphere p f Double where
+  _Sphere =
+    iso 
+      Sphere
+      (\(Sphere d) -> d)

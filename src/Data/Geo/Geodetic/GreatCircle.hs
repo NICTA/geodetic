@@ -8,6 +8,7 @@ module Data.Geo.Geodetic.GreatCircle(
 ) where
 
 import Prelude(Double, Num(..), Fractional(..), pi, sin, cos, acos)
+import Control.Applicative(Const)
 import Control.Lens((#), (^.))
 import System.Args.Optional(Optional1(..))
 import Data.Geo.Coordinate
@@ -20,54 +21,54 @@ import Data.Geo.Geodetic.Sphere
 
 -- | Great circle spherical law algorithm.
 --
--- >>> fmap (printf "%0.4f") (do fr <- 27.812 ..#.. 154.295; to <- (-66.093) ..#.. 12.84; return (sphericalLaw earthMean fr to)) :: Maybe String
+-- >>> fmap (printf "%0.4f") (do fr <- 27.812 <°> 154.295; to <- (-66.093) <°> 12.84; return (sphericalLaw earthMean fr to)) :: Maybe String
 -- Just "15000950.5589"
 --
--- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (sphericalLaw earthMean fr to)) :: Maybe String
+-- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) <°> 41.935; to <- 6.933 <°> (-162.55); return (sphericalLaw earthMean fr to)) :: Maybe String
 -- Just "17128743.0669"
 --
--- >>> fmap (printf "%0.4f") (do fr <- 27.812 ..#.. 154.295; to <- (-66.093) ..#.. 12.84; return (sphericalLaw (6350000 ^. nSphere) fr to)) :: Maybe String
+-- >>> fmap (printf "%0.4f") (do fr <- 27.812 <°> 154.295; to <- (-66.093) <°> 12.84; return (sphericalLaw ((6350000 :: Double) ^. _Sphere) fr to)) :: Maybe String
 -- Just "14959840.4461"
 --
--- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (sphericalLaw (6350000 ^. nSphere) fr to)) :: Maybe String
+-- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) <°> 41.935; to <- 6.933 <°> (-162.55); return (sphericalLaw ((6350000 :: Double) ^. _Sphere) fr to)) :: Maybe String
 -- Just "17081801.7377"
 sphericalLaw ::
-  (HasCoordinate c1, HasCoordinate c2) =>
+  (AsCoordinate (->) (Const Coordinate) start, AsCoordinate (->) (Const Coordinate) end) =>
   Sphere -- ^ reference sphere
-  -> c1 -- ^ start coordinate
-  -> c2 -- ^ end coordinate
+  -> start -- ^ start coordinate
+  -> end -- ^ end coordinate
   -> Double
 sphericalLaw s start' end' =
-  let start = start' ^. coordinate
-      end = end' ^. coordinate
+  let start = start' ^. _Coordinate
+      end = end' ^. _Coordinate
       toRadians n = n * pi / 180
-      lat1 = toRadians (fracLatitude # (start ^. latitude))
-      lat2 = toRadians (fracLatitude # (end ^. latitude))
-      lon1 = toRadians (fracLongitude # (start ^. longitude))
-      lon2 = toRadians (fracLongitude # (end ^. longitude))
-  in acos (sin lat1 * sin lat2 + cos lat1 * cos lat2 * cos (lon2 - lon1)) * nSphere # s
+      lat1 = toRadians (_Latitude # (start ^. _Latitude))
+      lat2 = toRadians (_Latitude # (end ^. _Latitude))
+      lon1 = toRadians (_Longitude # (start ^. _Longitude))
+      lon2 = toRadians (_Longitude # (end ^. _Longitude))
+  in acos (sin lat1 * sin lat2 + cos lat1 * cos lat2 * cos (lon2 - lon1)) * _Sphere # s
 
 -- | Great circle spherical law algorithm with a default sphere of the earth mean.
 --
--- >>> fmap (printf "%0.4f") (do fr <- 27.812 ..#.. 154.295; to <- (-66.093) ..#.. 12.84; return (sphericalLawD fr to)) :: Maybe String
+-- >>> fmap (printf "%0.4f") (do fr <- 27.812 <°> 154.295; to <- (-66.093) <°> 12.84; return (sphericalLawD fr to)) :: Maybe String
 -- Just "15000950.5589"
 --
--- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (sphericalLawD fr to)) :: Maybe String
+-- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) <°> 41.935; to <- 6.933 <°> (-162.55); return (sphericalLawD fr to)) :: Maybe String
 -- Just "17128743.0669"
 sphericalLawD ::
-  (HasCoordinate c1, HasCoordinate c2) =>
-  c1 -- ^ start coordinate
-  -> c2 -- ^ end coordinate
+  (AsCoordinate (->) (Const Coordinate) start, AsCoordinate (->) (Const Coordinate) end) =>
+  start -- ^ start coordinate
+  -> end -- ^ end coordinate
   -> Double
 sphericalLawD =
   sphericalLaw earthMean
 
 -- | Great circle spherical law algorithm with an optionally applied default sphere of the earth mean.
 --
--- >>> fmap (printf "%0.4f") (do fr <- 27.812 ..#.. 154.295; to <- (-66.093) ..#.. 12.84; return (sphericalLaw' fr to :: Double)) :: Maybe String
+-- >>> fmap (printf "%0.4f") (do fr <- 27.812 <°> 154.295; to <- (-66.093) <°> 12.84; return (sphericalLaw' fr to :: Double)) :: Maybe String
 -- Just "15000950.5589"
 --
--- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (sphericalLaw' fr to :: Double)) :: Maybe String
+-- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) <°> 41.935; to <- 6.933 <°> (-162.55); return (sphericalLaw' fr to :: Double)) :: Maybe String
 -- Just "17128743.0669"
 sphericalLaw' ::
   (Optional1
