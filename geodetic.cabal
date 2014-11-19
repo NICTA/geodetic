@@ -11,14 +11,14 @@ description:
   <<http://i.imgur.com/Ns5hntl.jpg>>
   .
   Geodetic calculations including Vincenty and Great Circle using a Latitude and Longitude pair
-homepage:           https://github.com/tonymorris/geodetic
-bug-reports:        https://github.com/tonymorris/geodetic/issues
+homepage:           https://github.com/NICTA/geodetic
+bug-reports:        https://github.com/NICTA/geodetic/issues
 cabal-version:      >= 1.10
 build-type:         Custom
 
 source-repository   head
   type:             git
-  location:         git@github.com:tonymorris/geodetic.git
+  location:         git@github.com:NICTA/geodetic.git
 
 flag                small_base
   description:      Choose the new, split-up base package.
