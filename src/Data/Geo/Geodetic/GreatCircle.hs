@@ -31,14 +31,12 @@ import Data.Geo.Geodetic.Sphere
 --
 -- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (sphericalLaw (6350000 ^. nSphere) fr to)) :: Maybe String
 -- Just "17081801.7377"
-{-
 sphericalLaw ::
-  (HasCoordinate c1, HasCoordinate c2) =>
   Sphere -- ^ reference sphere
-  -> c1 -- ^ start coordinate
-  -> c2 -- ^ end coordinate
+  -> Coordinate -- ^ start coordinate
+  -> Coordinate -- ^ end coordinate
   -> Double
-  -}
+-- todo signature  
 sphericalLaw s start' end' =
   let start = undef -- start' ^. coordinate
       end = undef -- end' ^. coordinate
@@ -47,7 +45,7 @@ sphericalLaw s start' end' =
       lat2 = undef -- toRadians (fracLatitude # (end ^. latitude))
       lon1 = undef -- toRadians (fracLongitude # (start ^. longitude))
       lon2 = undef -- toRadians (fracLongitude # (end ^. longitude))
-  in acos (sin lat1 * sin lat2 + cos lat1 * cos lat2 * cos (lon2 - lon1)) * nSphere # s
+  in acos (sin lat1 * sin lat2 + cos lat1 * cos lat2 * cos (lon2 - lon1)) * _Sphere # s
 
 undef = undef
 

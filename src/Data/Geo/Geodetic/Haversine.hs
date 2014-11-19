@@ -51,7 +51,7 @@ haversine s start' end' =
       square x = x * x
       a = square (sin dlat) + cosr lat1 * cosr lat2 * square (sin (dlon))
       c = 2 * atan2 (sqrt a) (sqrt (1 - a))
-  in (nSphere # s) * c
+  in (_Sphere # s) * c
 
 -- | Haversine algorithm with a default sphere of the earth mean.
 --
