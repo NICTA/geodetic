@@ -17,7 +17,8 @@ module Data.Geo.Geodetic.Vincenty(
 ) where
 
 import Prelude(Eq(..), Show(..), Ord(..), Num(..), Floating(..), Fractional(..), Double, Int, Bool, Ordering(..), subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, (.), (++), (&&), ($!), error, id)
-import Control.Lens(Profunctor, Optic', Iso', lens, (^.), (#), (^?), iso, _1, _2, from)
+import Control.Applicative(Const)
+import Control.Lens(Profunctor, Prism', Optic', Iso', (^.), (#), (^?), iso, _1, _2, from)
 import Data.Functor(Functor)
 import Data.Maybe(fromMaybe)
 import System.Args.Optional(Optional2(..))
@@ -80,18 +81,17 @@ instance (p ~ (->), Functor f) => AsBearing p f VincentyDirectResult where
 --
 -- >>> fmap (\c' -> direct ans convergence c' (modBearing 165.34) 4235) ((-66.093) ..#.. 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0662)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4139))) (Bearing 165.3183))
-{-
 direct ::
-  (HasEllipsoid e, HasCoordinate c, HasBearing b) =>
+  (AsCoordinate (->) (Const Coordinate) c, AsBearing (->) (Const Bearing) b, AsEllipsoid (->) (Const Ellipsoid) e) =>
   e -- ^ reference ellipsoid
   -> Convergence -- ^ convergence point to stop calculating
   -> c -- ^ begin coordinate
   -> b -- ^ bearing
   -> Double -- ^ distance
   -> VincentyDirectResult
--}
 direct e' conv start' bear' dist =
-  let radianLatitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Latitude
+  let radianLatitude :: Prism' Double Latitude
+      radianLatitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Latitude
       e = e' ^. _Ellipsoid
       start = start' ^. _Coordinate
       bear = bear' ^. _Bearing
@@ -131,9 +131,9 @@ direct e' conv start' bear' dist =
       ccca = cc * cosAlpha
       sss = sinu1 * sinSigma
       latitude' = let r = atan2 (sinu1 * cosSigma + cosu1 * sinSigma * cosAlpha) ((1.0 - flat) * sqrt (sin2Alpha + (sss - ccca) ** 2.0))
-                  in undef -- fromMaybe (error ("Invariant not met. Latitude in radians not within range " ++ show r)) (r ^? radianLatitude)
+                  in fromMaybe (error ("Invariant not met. Latitude in radians not within range " ++ show r)) (r ^? radianLatitude)
       longitude' = let r = _Longitude # (start ^. _Longitude) + ((atan2 (sinSigma * sinAlpha) (cc - sss * cosAlpha) - (1 - c) * flat * csa * (sigma'' + c * sinSigma * (cosSigmaM2 + c * cosSigma * (-1 + 2 * cos2SigmaM2)))) * 180 / pi)
-                   in undef -- fromMaybe (error ("Invariant not met. Longitude in radians not within range " ++ show r)) (r ^? _Longitude)
+                   in fromMaybe (error ("Invariant not met. Longitude in radians not within range " ++ show r)) (r ^? _Longitude)
   in VincentyDirectResult
        (latitude' .#. longitude')
        (
@@ -148,16 +148,14 @@ direct e' conv start' bear' dist =
 --
 -- >>> fmap (\c' -> directD c' (modBearing 165.34) 4235) ((-66.093) ..#.. 12.84)
 -- Just (VincentyDirectResult (Coordinate (Latitude (DegreesLatitude (-66)) (Minutes 7) (Seconds 47.0667)) (Longitude (DegreesLongitude 12) (Minutes 51) (Seconds 49.4142))) (Bearing 165.3183))
-{-
 directD ::
-  (HasCoordinate c, HasBearing b) =>
+  (AsCoordinate (->) (Const Coordinate) c, AsBearing (->) (Const Bearing) b) =>
   c -- ^ begin coordinate
   -> b -- ^ bearing
   -> Double -- ^ distance
   -> VincentyDirectResult
--}  
 directD =
-  undef -- direct wgs84 convergence
+  direct wgs84 convergence
 
 -- | Vincenty direct algorithm with an optionally applied default ellipsoid of WGS84 and standard convergence.
 --
@@ -193,31 +191,31 @@ direct' =
 --
 -- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverse ans convergence fr to)
 -- Just (GeodeticCurve 7099229.9126 Azimuth 0.0000 Azimuth 180.0000)
-{-
 inverse ::
-  (HasEllipsoid e, HasCoordinate c1, HasCoordinate c2) =>
+  (AsCoordinate (->) (Const Coordinate) start, AsCoordinate (->) (Const Coordinate) end, AsEllipsoid (->) (Const Ellipsoid) e) =>
   e -- ^ reference ellipsoid
   -> Convergence -- ^ convergence point to stop calculating
-  -> c1 -- ^ start coordinate
-  -> c2 -- ^ end coordinate
+  -> start -- ^ start coordinate
+  -> end -- ^ end coordinate
   -> Curve
--}
 inverse e' conv start' end' =
-  undef
-  {-
-  let e = e' ^. ellipsoid
-      start = undef -- start' ^. coordinate
-      end = undef -- end' ^. coordinate
-      b = e ^. semiMinor
-      f = e ^. flattening
+  let radianLatitude :: Prism' Double Latitude
+      radianLatitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Latitude
+      radianLongitude :: Prism' Double Longitude
+      radianLongitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Longitude
+      e = e' ^. _Ellipsoid
+      start = start' ^. _Coordinate
+      end = end' ^. _Coordinate
+      b = e ^. _SemiMinor
+      f = e ^. _Flattening
       (phi1, phi2) =
-        let rl k = undef -- radianLatitude # (k ^. latitude)
+        let rl k = radianLatitude # (k ^. _Latitude)
         in (rl start, rl end)
       a2b2b2 =
         let ss z = square (z e)
-        in ss (^. semiMajor) / ss (^. semiMinor) - 1
+        in ss (^. _SemiMajor) / ss (^. _SemiMinor) - 1
       omega =
-        let rl k = undef -- radianLongitude # (k ^. longitude)
+        let rl k = radianLongitude # (k ^. _Longitude)
         in rl end - rl start
       (u1, u2) =
         let at = atan . ((1 - f) *) . tan
@@ -270,7 +268,6 @@ inverse e' conv start' end' =
                                                                in (nan, nan))
         in alphaNoConverge (result ed == Converge) (compare phi1 phi2) 0 0
   in curve (b * a' ed * (sigma ed - deltasigma ed)) (modAzimuth alpha1) (modAzimuth alpha2)
--}
 
 -- | Vincenty inverse algorithm with a default ellipsoid of WGS84 and standard convergence.
 --
@@ -279,17 +276,13 @@ inverse e' conv start' end' =
 --
 -- >>> do fr <- 27.812 ..#.. 154.295; to <- 87.7769 ..#.. 19.944; return (inverseD fr to)
 -- Just (GeodeticCurve 7099204.2589 Azimuth 0.0000 Azimuth 180.0000)
-{-
 inverseD ::
-  (HasCoordinate c1, HasCoordinate c2) =>
-  c1 -- ^ start coordinate
-  -> c2 -- ^ end coordinate
+  (AsCoordinate (->) (Const Coordinate) start, AsCoordinate (->) (Const Coordinate) end) =>
+  start -- ^ start coordinate
+  -> end -- ^ end coordinate
   -> Curve
--}
 inverseD =
-  undef -- inverse wgs84 convergence
-
-undef = undef  
+  inverse wgs84 convergence
 
 -- | Vincenty inverse algorithm with an optionally applied default ellipsoid of WGS84 and standard convergence.
 --
