@@ -91,7 +91,8 @@ direct ::
   -> VincentyDirectResult
 -}
 direct e' conv start' bear' dist =
-  let e = e' ^. _Ellipsoid
+  let radianLatitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Latitude
+      e = e' ^. _Ellipsoid
       start = start' ^. _Coordinate
       bear = bear' ^. _Bearing
       sMnr = e ^. _SemiMinor
@@ -99,7 +100,7 @@ direct e' conv start' bear' dist =
       alpha = radianBearing # bear
       cosAlpha = cos alpha
       sinAlpha = sin alpha
-      tanu1 = undef -- (1.0 - flat) * tan (radianLatitude # (start ^. _Latitude))
+      tanu1 = (1.0 - flat) * tan (radianLatitude # (start ^. _Latitude))
       cosu1 = 1.0 / sqrt (1.0 + square tanu1)
       sinu1 = tanu1 * cosu1
       sigma1 = atan2 tanu1 cosAlpha
@@ -129,10 +130,10 @@ direct e' conv start' bear' dist =
       cc = cosu1 * cosSigma
       ccca = cc * cosAlpha
       sss = sinu1 * sinSigma
-      latitude' = let r = undef -- atan2 (sinu1 * cosSigma + cosu1 * sinSigma * cosAlpha) ((1.0 - flat) * sqrt (sin2Alpha + (sss - ccca) ** 2.0))
+      latitude' = let r = atan2 (sinu1 * cosSigma + cosu1 * sinSigma * cosAlpha) ((1.0 - flat) * sqrt (sin2Alpha + (sss - ccca) ** 2.0))
                   in undef -- fromMaybe (error ("Invariant not met. Latitude in radians not within range " ++ show r)) (r ^? radianLatitude)
-      longitude' = let r = undef -- fracLongitude # (start ^. longitude) + ((atan2 (sinSigma * sinAlpha) (cc - sss * cosAlpha) - (1 - c) * flat * csa * (sigma'' + c * sinSigma * (cosSigmaM2 + c * cosSigma * (-1 + 2 * cos2SigmaM2)))) * 180 / pi)
-                   in undef -- fromMaybe (error ("Invariant not met. Longitude in radians not within range " ++ show r)) (r ^? fracLongitude)
+      longitude' = let r = _Longitude # (start ^. _Longitude) + ((atan2 (sinSigma * sinAlpha) (cc - sss * cosAlpha) - (1 - c) * flat * csa * (sigma'' + c * sinSigma * (cosSigmaM2 + c * cosSigma * (-1 + 2 * cos2SigmaM2)))) * 180 / pi)
+                   in undef -- fromMaybe (error ("Invariant not met. Longitude in radians not within range " ++ show r)) (r ^? _Longitude)
   in VincentyDirectResult
        (latitude' .#. longitude')
        (
