@@ -1,4 +1,7 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 
 -- | An implementation of Thaddeus Vincenty's direct and inverse geodetic algorithms. <http://www.ngs.noaa.gov/PUBS_LIB/inverse.pdf>
 module Data.Geo.Geodetic.Vincenty(
@@ -13,8 +16,9 @@ module Data.Geo.Geodetic.Vincenty(
 , inverse'
 ) where
 
-import Prelude(Eq(..), Show(..), Ord(..), Num(..), Floating(..), Fractional(..), Double, Int, Bool, Ordering(..), subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, (.), (++), (&&), ($!), error)
-import Control.Lens(lens, (^.), (#), (^?))
+import Prelude(Eq(..), Show(..), Ord(..), Num(..), Floating(..), Fractional(..), Double, Int, Bool, Ordering(..), subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, (.), (++), (&&), ($!), error, id)
+import Control.Lens(Profunctor, Optic', Iso', lens, (^.), (#), (^?), iso, _1, _2, from)
+import Data.Functor(Functor)
 import Data.Maybe(fromMaybe)
 import System.Args.Optional(Optional2(..))
 import Data.Geo.Coordinate
@@ -40,15 +44,29 @@ data VincentyDirectResult =
     Coordinate
     Bearing
   deriving (Eq, Ord, Show)
-{-
-instance HasCoordinate VincentyDirectResult where
-  coordinate =
-    lens (\(VincentyDirectResult c _) -> c) (\(VincentyDirectResult _ b) c -> VincentyDirectResult c b)
 
-instance HasBearing VincentyDirectResult where
-  bearing =
-    lens (\(VincentyDirectResult _ b) -> b) (\(VincentyDirectResult c _) b -> VincentyDirectResult c b)
--}
+class AsVincentyDirectResult p f s where
+  _VincentyDirectResult ::
+    Optic' p f s VincentyDirectResult
+
+instance AsVincentyDirectResult p f VincentyDirectResult where
+  _VincentyDirectResult =
+    id
+
+instance (Profunctor p, Functor f) => AsVincentyDirectResult p f (Coordinate, Bearing) where
+  _VincentyDirectResult =
+    iso
+      (\(c, b) -> VincentyDirectResult c b)
+      (\(VincentyDirectResult c b) -> (c, b))
+
+instance (p ~ (->), Functor f) => AsCoordinate p f VincentyDirectResult where
+  _Coordinate =
+    from (_VincentyDirectResult :: Iso' (Coordinate, Bearing) VincentyDirectResult) . _1
+
+instance (p ~ (->), Functor f) => AsBearing p f VincentyDirectResult where
+  _Bearing =
+    from (_VincentyDirectResult :: Iso' (Coordinate, Bearing) VincentyDirectResult) . _2
+
 -- | Vincenty direct algorithm.
 --
 -- >>> fmap (\c' -> direct wgs84 convergence c' (modBearing 165.34) 4235) (27.812 ..#.. 154.295)
@@ -74,14 +92,14 @@ direct ::
 -}
 direct e' conv start' bear' dist =
   let e = e' ^. _Ellipsoid
-      start = undef -- start' ^. coordinate
-      bear = undef -- bear' ^. bearing
+      start = start' ^. _Coordinate
+      bear = bear' ^. _Bearing
       sMnr = e ^. _SemiMinor
       flat = e ^. _Flattening
       alpha = radianBearing # bear
       cosAlpha = cos alpha
       sinAlpha = sin alpha
-      tanu1 = undef -- (1.0 - flat) * tan (radianLatitude # (start ^. latitude))
+      tanu1 = undef -- (1.0 - flat) * tan (radianLatitude # (start ^. _Latitude))
       cosu1 = 1.0 / sqrt (1.0 + square tanu1)
       sinu1 = tanu1 * cosu1
       sigma1 = atan2 tanu1 cosAlpha
