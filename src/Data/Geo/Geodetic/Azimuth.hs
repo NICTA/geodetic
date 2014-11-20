@@ -1,14 +1,18 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+
+
 -- | An azimuth in degrees between 0 and 360.
 module Data.Geo.Geodetic.Azimuth(
   Azimuth
-, HasAzimuth(..)
+, AsAzimuth(..)
 , modAzimuth
-, nAzimuth
 ) where
 
+import Control.Applicative(Applicative)
 import Prelude(Double, Bool(..), Eq, Show(..), Ord(..), id, (&&), (++), showParen, showString)
 import Data.Maybe(Maybe(..))
-import Control.Lens(Prism', Lens', prism')
+import Control.Lens(Choice, Optic', prism')
 import Text.Printf(printf)
 import Data.Fixed(mod')
 
@@ -50,34 +54,33 @@ modAzimuth ::
 modAzimuth x =
   Azimuth (x `mod'` 360)
 
+class AsAzimuth p f s where
+  _Azimuth ::
+    Optic' p f s Azimuth
+
+instance AsAzimuth p f Azimuth where
+  _Azimuth =
+    id
+
 -- | A prism on azimuth to an integer between 0 and 359 inclusive.
 --
--- >>> 7 ^? nAzimuth
+-- >> 7 ^? _Azimuth
 -- Just (Azimuth 7.0000)
 --
--- >>> 0 ^? nAzimuth
+-- >> 0 ^? _Azimuth
 -- Just (Azimuth 0.0000)
 --
--- >>> 359.999 ^? nAzimuth
+-- >> 359.999 ^? _Azimuth
 -- Just (Azimuth 359.9990)
 --
--- >>> 360 ^? nAzimuth
+-- >> 360 ^? _Azimuth
 -- Nothing
 --
--- prop> all (\m -> nAzimuth # m == n) (n ^? nAzimuth)
-nAzimuth ::
-  Prism' Double Azimuth
-nAzimuth =
-  prism'
-    (\(Azimuth i) -> i)
-    (\i -> case i >= 0 && i < 360 of
-             True -> Just (Azimuth i)
-             False -> Nothing)
-
-class HasAzimuth t where
-  azimuth ::
-    Lens' t Azimuth
-
-instance HasAzimuth Azimuth where
-  azimuth =
-    id
+-- prlop> all (\m -> _Azimuth # m == n) (n ^? _Azimuth)
+instance (Choice p, Applicative f) => AsAzimuth p f Double where
+  _Azimuth =
+    prism'
+      (\(Azimuth i) -> i)
+      (\i -> case i >= 0 && i < 360 of
+               True -> Just (Azimuth i)
+               False -> Nothing)        
