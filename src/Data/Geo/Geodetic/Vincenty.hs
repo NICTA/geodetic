@@ -73,11 +73,11 @@ direct ::
   -> VincentyDirectResult
 -}
 direct e' conv start' bear' dist =
-  let e = e' ^. ellipsoid
+  let e = e' ^. _Ellipsoid
       start = undef -- start' ^. coordinate
       bear = undef -- bear' ^. bearing
-      sMnr = e ^. semiMinor
-      flat = e ^. flattening
+      sMnr = e ^. _SemiMinor
+      flat = e ^. _Flattening
       alpha = radianBearing # bear
       cosAlpha = cos alpha
       sinAlpha = sin alpha
@@ -88,7 +88,7 @@ direct e' conv start' bear' dist =
       csa = cosu1 * sinAlpha
       sin2Alpha = square csa
       cos2Alpha = 1 - sin2Alpha
-      ab d f g h i = let s = cos2Alpha * (square (e ^. semiMajor / sMnr) - 1)
+      ab d f g h i = let s = cos2Alpha * (square (e ^. _SemiMajor / sMnr) - 1)
                      in (s / d) * (f + s * (g + s * (h - i * s)))
       a = 1 + ab 16384 4096 (-768) 320 175
       b = ab 1024 256 (-128) 74 47
