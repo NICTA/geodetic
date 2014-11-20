@@ -1,16 +1,22 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+
 -- | A geodetic curve is made of a distance in metres, an azimuth and a reverse azimuth.
 module Data.Geo.Geodetic.Curve(
   Curve
+, AsCurve(..)
 , curve
 , curveDistance
 , curveAzimuth
 , curveReverseAzimuth
 ) where
 
-import Prelude(Eq, Show(..), Ord(..), Double, (.), abs, showString, showParen)
+import Prelude(Eq, Show(..), Ord(..), Double, showString, showParen, id)
+import Data.Functor(Functor)
 import Data.List(unwords)
 import Text.Printf(printf)
-import Control.Lens(Lens', lens)
+import Control.Lens(Optic', Lens', Profunctor, lens, iso)
 import Data.Geo.Geodetic.Azimuth
 
 data Curve =
@@ -49,3 +55,17 @@ curveReverseAzimuth ::
   Lens' Curve Azimuth
 curveReverseAzimuth =
   lens (\(Curve _ _ r) -> r) (\(Curve d a _) r -> Curve d a r)
+
+class AsCurve p f s where
+  _Curve ::
+    Optic' p f s Curve
+
+instance AsCurve p f Curve where
+  _Curve =
+    id
+
+instance (Profunctor p, Functor f) => AsCurve p f (Double, Azimuth, Azimuth) where
+  _Curve =
+    iso
+      (\(d, a, r) -> Curve d a r)
+      (\(Curve d a r) -> (d, a, r))
