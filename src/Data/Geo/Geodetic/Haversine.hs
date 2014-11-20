@@ -31,22 +31,45 @@ import Data.Geo.Geodetic.Sphere
 --
 -- >>> fmap (printf "%0.4f") (do fr <- (-16.7889) ..#.. 41.935; to <- 6.933 ..#.. (-162.55); return (haversine (6350000 ^. nSphere) fr to)) :: Maybe String
 -- Just "17081801.7377"
-{-
+
+{-}
 haversine ::
-  (HasCoordinate c1, HasCoordinate c2) =>
+  AsCoordinate (->) f start =>
   Sphere -- ^ reference sphere
-  -> c1 -- ^ start coordinate
-  -> c2 -- ^ end coordinate
+  -> start -- ^ start coordinate
+  -> Coordinate -- ^ end coordinate
   -> Double
   -}
+-- todo  
+{-}
+  haversine :: forall s s1 a.
+                   (AsCoordinate (->) (Control.Applicative.Const Coordinate) s1,
+                    AsCoordinate (->) (Control.Applicative.Const Coordinate) s,
+                    AsLatitude
+                      tagged-0.7.3:Data.Tagged.Tagged
+                      transformers-0.3.0.0:Data.Functor.Identity.Identity
+                      a,
+                    AsLongitude
+                      tagged-0.7.3:Data.Tagged.Tagged
+                      transformers-0.3.0.0:Data.Functor.Identity.Identity
+                      a,
+                    AsSphere
+                      tagged-0.7.3:Data.Tagged.Tagged
+                      transformers-0.3.0.0:Data.Functor.Identity.Identity
+                      a,
+                    GHC.Float.RealFloat a) =>
+                   Sphere -> s1 -> s -> a
+
+
+-}
 haversine s start' end' =
-  let start = undef -- start' ^. coordinate
-      end = undef -- end' ^. coordinate
-      lat1 = undef -- fracLatitude # (start ^. latitude)
-      lat2 = undef -- fracLatitude # (end ^. latitude)
+  let start = start' ^. _Coordinate
+      end = end' ^. _Coordinate
+      lat1 = _Latitude # (start ^. _Latitude)
+      lat2 = _Latitude # (end ^. _Latitude)
       toRadians n = n * pi / 180
       dlat = (toRadians (lat1 - lat2)) / 2
-      dlon = undef -- (toRadians (fracLongitude # (start ^. longitude) - fracLongitude # (end ^. longitude))) / 2
+      dlon = (toRadians (_Longitude # (start ^. _Longitude) - _Longitude # (end ^. _Longitude))) / 2
       cosr = cos . toRadians
       square x = x * x
       a = square (sin dlat) + cosr lat1 * cosr lat2 * square (sin (dlon))
