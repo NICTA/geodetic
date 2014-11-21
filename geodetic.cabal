@@ -15,6 +15,7 @@ homepage:           https://github.com/NICTA/geodetic
 bug-reports:        https://github.com/NICTA/geodetic/issues
 cabal-version:      >= 1.10
 build-type:         Custom
+extra-source-files: changelog
 
 source-repository   head
   type:             git
