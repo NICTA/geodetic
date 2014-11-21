@@ -4,7 +4,7 @@
 {-# LANGUAGE GADTs #-}
 
 -- | An implementation of Thaddeus Vincenty's direct and inverse geodetic algorithms. <http://www.ngs.noaa.gov/PUBS_LIB/inverse.pdf>
-module Data.Geo.Geodetic.Vincenty(
+module Data.Geo.Geodetic.Vincenty {-(
   Convergence
 , convergence
 , direct
@@ -14,23 +14,34 @@ module Data.Geo.Geodetic.Vincenty(
 , inverse
 , inverseD
 , inverse'
-) where
+) -} where
 
-import Prelude(Eq(..), Show(..), Ord(..), Num(..), Floating(..), Fractional(..), Double, Int, Bool, Ordering(..), subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, (.), (++), (&&), ($!), error, id)
 import Control.Applicative(Const)
+import Control.Category(Category(id, (.)))
 import Control.Lens(Profunctor, Prism', Optic', Iso', (^.), (#), (^?), iso, _1, _2, from)
+import Data.Bool(Bool, (&&))
+import Data.Eq(Eq((==)))
 import Data.Functor(Functor)
+import Data.Int(Int)
+import Data.List((++))
 import Data.Maybe(fromMaybe)
+import Data.Ord(Ord((>=), (<), (>), compare), Ordering(GT, LT))
 import Data.Tuple(uncurry)
-import System.Args.Optional(Optional2(..))
-import Data.Geo.Coordinate
-import Data.Geo.Geodetic.Azimuth
-import Data.Geo.Geodetic.Bearing
-import Data.Geo.Geodetic.Ellipsoid
-import Data.Geo.Geodetic.Curve
+import Data.Geo.Coordinate(AsCoordinate(_Coordinate), Coordinate, Latitude, Longitude, AsLatitude(_Latitude), AsLongitude(_Longitude), (.#.))
+import Data.Geo.Geodetic.Azimuth(modAzimuth)
+import Data.Geo.Geodetic.Bearing(AsBearing(_Bearing), Bearing)
+import Data.Geo.Geodetic.Ellipsoid(AsEllipsoid(_Ellipsoid), Ellipsoid, AsSemiMinor(_SemiMinor), AsSemiMajor(_SemiMajor), AsFlattening(_Flattening), wgs84)
+import Data.Geo.Geodetic.Curve(Curve, curve)
+import Data.Radian(toRadians)
+import Prelude(Show(show), Num((*), (+), (-), abs), Floating((**)), Fractional(..), Double, subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, ($!), error)
+import System.Args.Optional(Optional2(optional2))
 
 -- $setup
--- >>> import Prelude
+-- >>> import Control.Monad(Monad(return))
+-- >>> import Data.Functor(Functor(fmap))
+-- >>> import Data.Geo.Geodetic.Bearing(modBearing)
+-- >>> import Data.Geo.Geodetic.Ellipsoid(ans)
+-- >>> import Data.Geo.Coordinate((<°>))
 
 type Convergence =
   Double
@@ -91,17 +102,16 @@ direct ::
   -> Double -- ^ distance
   -> VincentyDirectResult
 direct e' conv start' bear' dist =
-  let radianLatitude :: Prism' Double Latitude
-      radianLatitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Latitude
-      e = e' ^. _Ellipsoid
+  let e = e' ^. _Ellipsoid
       start = start' ^. _Coordinate
+      bear :: Bearing
       bear = bear' ^. _Bearing
       sMnr = e ^. _SemiMinor
       flat = e ^. _Flattening
-      alpha = radianBearing # bear
+      alpha = toRadians . _Bearing # bear
       cosAlpha = cos alpha
       sinAlpha = sin alpha
-      tanu1 = (1.0 - flat) * tan (radianLatitude # (start ^. _Latitude))
+      tanu1 = (1.0 - flat) * tan (toRadians . _Latitude # (start ^. _Latitude))
       cosu1 = 1.0 / sqrt (1.0 + square tanu1)
       sinu1 = tanu1 * cosu1
       sigma1 = atan2 tanu1 cosAlpha
@@ -132,14 +142,14 @@ direct e' conv start' bear' dist =
       ccca = cc * cosAlpha
       sss = sinu1 * sinSigma
       latitude' = let r = atan2 (sinu1 * cosSigma + cosu1 * sinSigma * cosAlpha) ((1.0 - flat) * sqrt (sin2Alpha + (sss - ccca) ** 2.0))
-                  in fromMaybe (error ("Invariant not met. Latitude in radians not within range " ++ show r)) (r ^? radianLatitude)
+                  in fromMaybe (error ("Invariant not met. Latitude in radians not within range " ++ show r)) (r ^? toRadians . _Latitude)
       longitude' = let r = _Longitude # (start ^. _Longitude) + ((atan2 (sinSigma * sinAlpha) (cc - sss * cosAlpha) - (1 - c) * flat * csa * (sigma'' + c * sinSigma * (cosSigmaM2 + c * cosSigma * (-1 + 2 * cos2SigmaM2)))) * 180 / pi)
                    in fromMaybe (error ("Invariant not met. Longitude in radians not within range " ++ show r)) (r ^? _Longitude)
   in VincentyDirectResult
        (latitude' .#. longitude')
        (
          let r = atan2 csa (ccca - sss)
-         in fromMaybe (error ("Invariant not met. Bearing in radians not within range " ++ show r)) (r ^? radianBearing)
+         in fromMaybe (error ("Invariant not met. Bearing in radians not within range " ++ show r)) (r ^? toRadians . _Bearing)
        )
 
 -- | Vincenty direct algorithm with a default ellipsoid of WGS84 and standard convergence.

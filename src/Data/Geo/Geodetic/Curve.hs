@@ -12,12 +12,15 @@ module Data.Geo.Geodetic.Curve(
 , curveReverseAzimuth
 ) where
 
-import Prelude(Eq, Show(..), Ord(..), Double, showString, showParen, id)
+import Control.Category(id)
+import Control.Lens(Optic', Lens', Profunctor, lens, iso)
+import Data.Eq(Eq)
 import Data.Functor(Functor)
 import Data.List(unwords)
-import Text.Printf(printf)
-import Control.Lens(Optic', Lens', Profunctor, lens, iso)
+import Data.Ord(Ord((>)))
 import Data.Geo.Geodetic.Azimuth
+import Text.Printf(printf)
+import Prelude(Show(show, showsPrec), Double, showString, showParen)
 
 data Curve =
   Curve

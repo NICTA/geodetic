@@ -9,15 +9,19 @@ module Data.Geo.Geodetic.Sphere(
 , earthMean
 ) where
 
-import Prelude(Double, Eq, Show(..), Ord(..), id, (++), showParen, showString)
+import Control.Category(Category(id))
 import Control.Lens(Optic', Profunctor, iso)
+import Data.Eq(Eq)
 import Data.Functor(Functor)
+import Data.List((++))
+import Data.Ord(Ord(..))
 import Text.Printf(printf)
+import Prelude(Double, Show(showsPrec), showParen, showString)
 
 -- $setup
 -- >>> import Control.Lens((#), (^.))
 -- >>> import Data.Foldable(all)
--- >>> import Prelude(Eq(..))
+-- >>> import Prelude(Eq((==)))
 
 newtype Sphere =
   Sphere Double

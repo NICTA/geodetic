@@ -34,7 +34,11 @@ module Data.Geo.Geodetic.Ellipsoid(
 , clarke1880
 ) where
 
-import Prelude(Eq, Ord, Show, Num(..), Fractional(..), Double, id, Functor)
+import Control.Category(Category(id))
+import Data.Eq(Eq)
+import Data.Functor(Functor)
+import Data.Ord(Ord)
+import Prelude(Show, Num((*), (-)), Fractional((/)), Double)
 import Control.Lens(Optic', lens)
 
 data Ellipsoid =

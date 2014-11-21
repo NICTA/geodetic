@@ -7,15 +7,16 @@ module Data.Geo.Geodetic.GreatCircle(
 , sphericalLaw'
 ) where
 
-import Prelude(Double, Num(..), Fractional(..), pi, sin, cos, acos)
 import Control.Applicative(Const)
 import Control.Lens((#), (^.))
-import System.Args.Optional(Optional1(..))
-import Data.Geo.Coordinate
-import Data.Geo.Geodetic.Sphere
+import Data.Geo.Coordinate(AsCoordinate(_Coordinate), Coordinate, AsLongitude(_Longitude), AsLatitude(_Latitude))
+import Data.Geo.Geodetic.Sphere(AsSphere(_Sphere), Sphere, earthMean)
+import Prelude(Double, Num((*), (+), (-)), Fractional((/)), pi, sin, cos, acos)
+import System.Args.Optional(Optional1(optional1))
 
 -- $setup
--- >>> import Prelude(Functor(..), Monad(..), String)
+-- >>> import Prelude(Functor(fmap), Monad(return), String)
+-- >>> import Data.Geo.Coordinate((<°>))
 -- >>> import Data.Maybe(Maybe)
 -- >>> import Text.Printf(printf)
 

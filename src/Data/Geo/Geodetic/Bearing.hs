@@ -6,21 +6,25 @@ module Data.Geo.Geodetic.Bearing(
   Bearing
 , AsBearing(..)
 , modBearing
-, radianBearing
 ) where
 
 import Control.Applicative(Applicative)
-import Prelude(Double, Eq, Show(..), Num(..), Fractional(..), Ord(..), id, (&&), (++), (.), showString, showParen, pi)
-import Data.Bool(bool)
-import Data.Maybe(Maybe(..))
-import Control.Lens(Choice, Optic', Prism', prism', iso)
-import Text.Printf(printf)
+import Control.Category(Category(id))
+import Control.Lens(Choice, Optic', prism')
+import Data.Bool(bool, (&&))
+import Data.Eq(Eq)
 import Data.Fixed(mod')
+import Data.List((++))
+import Data.Maybe(Maybe(Nothing, Just))
+import Data.Ord(Ord((>), (>=), (<)))
+import Prelude(Double, Show(showsPrec), showString, showParen)
+import Text.Printf(printf)
 
 -- $setup
 -- >>> import Control.Lens((#), (^?))
+-- >>> import Data.Eq(Eq((==)))
 -- >>> import Data.Foldable(all)
--- >>> import Prelude(Eq(..))
+-- >>> import Prelude(Num((*), (-)), Floating(pi))
 
 newtype Bearing =
   Bearing Double
@@ -58,33 +62,6 @@ modBearing ::
 modBearing x =
   Bearing (x `mod'` 360)
 
--- | A prism on bearing to a double between 0 and π exclusive.
---
--- >>> (2 * pi - 0.0000000001) ^? radianBearing
--- Just (Bearing 360.0000)
---
--- >>> 0 ^? radianBearing
--- Just (Bearing 0.0000)
---
--- >>> 0.001 ^? radianBearing
--- Just (Bearing 0.0573)
---
--- >>> 1.78391 ^? radianBearing
--- Just (Bearing 102.2105)
---
--- >>> pi ^? radianBearing
--- Just (Bearing 180.0000)
---
--- >>> (2 * pi) ^? radianBearing
--- Nothing
---
--- >>> (-0.001) ^? radianBearing
--- Nothing
-radianBearing ::
-  Prism' Double Bearing
-radianBearing =
-  iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Bearing
-
 class AsBearing p f s where
   _Bearing ::
     Optic' p f s Bearing
@@ -116,3 +93,4 @@ instance (Choice p, Applicative f) => AsBearing p f Double where
     prism'
       (\(Bearing i) -> i)
       (\i -> bool Nothing (Just (Bearing i)) (i >= 0 && i < 360))
+
