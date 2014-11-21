@@ -9,8 +9,8 @@ module Data.Geo.Geodetic.Sphere(
 , earthMean
 ) where
 
-import Prelude(Double, Bool(..), Eq, Show(..), Ord(..), id, (&&), (++), (.), abs, showParen, showString)
-import Control.Lens(Optic', Iso', Profunctor, iso)
+import Prelude(Double, Eq, Show(..), Ord(..), id, (++), showParen, showString)
+import Control.Lens(Optic', Profunctor, iso)
 import Data.Functor(Functor)
 import Text.Printf(printf)
 
