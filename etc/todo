@@ -1,5 +1,8 @@
 X doctests
 * Radians/Degrees (Data.Angle)
+    * Bearing:83
+    * Vincenty:94
+    * Vincenty:203
 * imports
 X hlint
 * delete this todo
