@@ -94,22 +94,22 @@ instance AsBearing p f Bearing where
 
 -- | A prism on bearing to a double between 0 inclusive and 360 exclusive.
 --
--- >>> 7 ^? _Bearing
+-- >>> (7 :: Double) ^? _Bearing
 -- Just (Bearing 7.0000)
 --
--- >>> 0 ^? _Bearing
+-- >>> (0 :: Double) ^? _Bearing
 -- Just (Bearing 0.0000)
 --
--- >>> 359 ^? _Bearing
+-- >>> (359 :: Double) ^? _Bearing
 -- Just (Bearing 359.0000)
 --
--- >>> 359.997 ^? _Bearing
+-- >>> (359.997 :: Double) ^? _Bearing
 -- Just (Bearing 359.9970)
 --
--- >>> 360 ^? _Bearing
+-- >>> (360 :: Double) ^? _Bearing
 -- Nothing
 --
--- prop> all (\m -> _Bearing # m == n) (n ^? _Bearing)
+-- prop> all (\m -> _Bearing # m == n) ((n :: Double) ^? _Bearing)
 instance (Choice p, Applicative f) => AsBearing p f Double where
   _Bearing =
     prism'
