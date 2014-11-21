@@ -6,14 +6,14 @@ module Data.Geo.Geodetic.Bearing(
   Bearing
 , AsBearing(..)
 , modBearing
-, radianBearing
 ) where
 
 import Control.Applicative(Applicative)
-import Prelude(Double, Eq, Show(..), Num(..), Fractional(..), Ord(..), id, (&&), (++), (.), showString, showParen, pi)
+import Prelude(Floating, Double, Eq, Show(..), Ord(..), id, (&&), (++), (.), showString, showParen)
 import Data.Bool(bool)
 import Data.Maybe(Maybe(..))
-import Control.Lens(Choice, Optic', Prism', prism', iso)
+import Data.Radian(Radian, radians)
+import Control.Lens(Choice, Optic', prism')
 import Text.Printf(printf)
 import Data.Fixed(mod')
 
@@ -58,33 +58,6 @@ modBearing ::
 modBearing x =
   Bearing (x `mod'` 360)
 
--- | A prism on bearing to a double between 0 and π exclusive.
---
--- >>> (2 * pi - 0.0000000001) ^? radianBearing
--- Just (Bearing 360.0000)
---
--- >>> 0 ^? radianBearing
--- Just (Bearing 0.0000)
---
--- >>> 0.001 ^? radianBearing
--- Just (Bearing 0.0573)
---
--- >>> 1.78391 ^? radianBearing
--- Just (Bearing 102.2105)
---
--- >>> pi ^? radianBearing
--- Just (Bearing 180.0000)
---
--- >>> (2 * pi) ^? radianBearing
--- Nothing
---
--- >>> (-0.001) ^? radianBearing
--- Nothing
-radianBearing ::
-  Prism' Double Bearing
-radianBearing =
-  iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Bearing
-
 class AsBearing p f s where
   _Bearing ::
     Optic' p f s Bearing
@@ -116,3 +89,29 @@ instance (Choice p, Applicative f) => AsBearing p f Double where
     prism'
       (\(Bearing i) -> i)
       (\i -> bool Nothing (Just (Bearing i)) (i >= 0 && i < 360))
+
+-- | A prism on bearing to a double between 0 and π exclusive.
+--
+-- >>> (2 * pi - 0.0000000001 :: Radian Double) ^? _Bearing
+-- Just (Bearing 360.0000)
+--
+-- >>> (0 :: Radian Double) ^? _Bearing
+-- Just (Bearing 0.0000)
+--
+-- >>> (0.001 :: Radian Double) ^? _Bearing
+-- Just (Bearing 0.0573)
+--
+-- >>> (1.78391 :: Radian Double) ^? _Bearing
+-- Just (Bearing 102.2105)
+--
+-- >>> (pi :: Radian Double) ^? _Bearing
+-- Just (Bearing 180.0000)
+--
+-- >>> (2 * pi :: Radian Double) ^? _Bearing
+-- Nothing
+--
+-- >>> (-0.001 :: Radian Double) ^? _Bearing
+-- Nothing
+instance (Choice p, Applicative f, Floating x, AsBearing p f x) => AsBearing p f (Radian x) where
+  _Bearing =
+    radians . _Bearing

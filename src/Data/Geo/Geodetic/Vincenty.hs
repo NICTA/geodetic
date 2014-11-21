@@ -98,7 +98,7 @@ direct e' conv start' bear' dist =
       bear = bear' ^. _Bearing
       sMnr = e ^. _SemiMinor
       flat = e ^. _Flattening
-      alpha = radianBearing # bear
+      alpha = _Bearing # bear
       cosAlpha = cos alpha
       sinAlpha = sin alpha
       tanu1 = (1.0 - flat) * tan (radianLatitude # (start ^. _Latitude))
@@ -139,7 +139,7 @@ direct e' conv start' bear' dist =
        (latitude' .#. longitude')
        (
          let r = atan2 csa (ccca - sss)
-         in fromMaybe (error ("Invariant not met. Bearing in radians not within range " ++ show r)) (r ^? radianBearing)
+         in fromMaybe (error ("Invariant not met. Bearing in radians not within range " ++ show r)) (r ^? _Bearing)
        )
 
 -- | Vincenty direct algorithm with a default ellipsoid of WGS84 and standard convergence.
