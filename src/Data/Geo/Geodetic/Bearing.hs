@@ -10,7 +10,8 @@ module Data.Geo.Geodetic.Bearing(
 ) where
 
 import Control.Applicative(Applicative)
-import Prelude(Double, Bool(..), Eq, Show(..), Num(..), Fractional(..), Ord(..), id, (&&), (++), (.), showString, showParen, pi)
+import Prelude(Double, Eq, Show(..), Num(..), Fractional(..), Ord(..), id, (&&), (++), (.), showString, showParen, pi)
+import Data.Bool(bool)
 import Data.Maybe(Maybe(..))
 import Control.Lens(Choice, Optic', Prism', prism', iso)
 import Text.Printf(printf)
@@ -114,7 +115,4 @@ instance (Choice p, Applicative f) => AsBearing p f Double where
   _Bearing =
     prism'
       (\(Bearing i) -> i)
-      (\i -> case i >= 0 && i < 360 of
-               True -> Just (Bearing i)
-               False -> Nothing)
-
+      (\i -> bool Nothing (Just (Bearing i)) (i >= 0 && i < 360))

@@ -21,6 +21,7 @@ import Control.Applicative(Const)
 import Control.Lens(Profunctor, Prism', Optic', Iso', (^.), (#), (^?), iso, _1, _2, from)
 import Data.Functor(Functor)
 import Data.Maybe(fromMaybe)
+import Data.Tuple(uncurry)
 import System.Args.Optional(Optional2(..))
 import Data.Geo.Coordinate
 import Data.Geo.Geodetic.Azimuth
@@ -57,7 +58,7 @@ instance AsVincentyDirectResult p f VincentyDirectResult where
 instance (Profunctor p, Functor f) => AsVincentyDirectResult p f (Coordinate, Bearing) where
   _VincentyDirectResult =
     iso
-      (\(c, b) -> VincentyDirectResult c b)
+      (uncurry VincentyDirectResult)
       (\(VincentyDirectResult c b) -> (c, b))
 
 instance (p ~ (->), Functor f) => AsCoordinate p f VincentyDirectResult where
@@ -382,7 +383,7 @@ doWhile f p a =
   in if p x then doWhile f p x else x
 
 whileDo :: (a -> a) -> (a -> Bool) -> a -> a
-whileDo f p a = if p a then whileDo f p $! (f a) else a
+whileDo f p a = if p a then whileDo f p $! f a else a
 
 data InverseResult = Continue | Limit | Converge deriving Eq
 

@@ -10,7 +10,8 @@ module Data.Geo.Geodetic.Azimuth(
 ) where
 
 import Control.Applicative(Applicative)
-import Prelude(Double, Bool(..), Eq, Show(..), Ord(..), id, (&&), (++), showParen, showString)
+import Prelude(Double, Eq, Show(..), Ord(..), id, (&&), (++), showParen, showString)
+import Data.Bool(bool)
 import Data.Maybe(Maybe(..))
 import Control.Lens(Choice, Optic', prism')
 import Text.Printf(printf)
@@ -81,6 +82,4 @@ instance (Choice p, Applicative f) => AsAzimuth p f Double where
   _Azimuth =
     prism'
       (\(Azimuth i) -> i)
-      (\i -> case i >= 0 && i < 360 of
-               True -> Just (Azimuth i)
-               False -> Nothing)        
+      (\i -> bool Nothing (Just (Azimuth i)) (i >= 0 && i < 360))

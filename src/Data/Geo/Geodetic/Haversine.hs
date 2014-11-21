@@ -46,11 +46,11 @@ haversine s start' end' =
       lat1 = _Latitude # (start ^. _Latitude)
       lat2 = _Latitude # (end ^. _Latitude)
       toRadians n = n * pi / 180
-      dlat = (toRadians (lat1 - lat2)) / 2
-      dlon = (toRadians (_Longitude # (start ^. _Longitude) - _Longitude # (end ^. _Longitude))) / 2
+      dlat = toRadians (lat1 - lat2) / 2
+      dlon = toRadians (_Longitude # (start ^. _Longitude) - _Longitude # (end ^. _Longitude)) / 2
       cosr = cos . toRadians
       square x = x * x
-      a = square (sin dlat) + cosr lat1 * cosr lat2 * square (sin (dlon))
+      a = square (sin dlat) + cosr lat1 * cosr lat2 * square (sin dlon)
       c = 2 * atan2 (sqrt a) (sqrt (1 - a))
   in (_Sphere # s) * c
 

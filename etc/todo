@@ -1,4 +1,5 @@
-* doctests
-* Radians/Degrees
+X doctests
+* Radians/Degrees (Data.Angle)
 * imports
+* hlint
 * delete this todo
