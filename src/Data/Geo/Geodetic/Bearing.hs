@@ -20,7 +20,7 @@ import Data.Fixed(mod')
 -- $setup
 -- >>> import Control.Lens((#), (^?))
 -- >>> import Data.Foldable(all)
--- >>> import Prelude(Eq(..))
+-- >>> import Prelude(Eq(..), Num((*), (-)), Floating(pi))
 
 newtype Bearing =
   Bearing Double
