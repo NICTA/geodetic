@@ -1,8 +1,8 @@
 X doctests
-* Radians/Degrees (Data.Angle)
-    * Bearing:83
-    * Vincenty:94
-    * Vincenty:203
+X Radians/Degrees (Data.Angle)
+    X Bearing:83
+    X Vincenty:94
+    X Vincenty:203
 * imports
 X hlint
 * delete this todo
