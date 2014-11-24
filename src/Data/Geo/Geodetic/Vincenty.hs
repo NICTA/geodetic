@@ -16,22 +16,32 @@ module Data.Geo.Geodetic.Vincenty {-(
 , inverse'
 ) -} where
 
-import Prelude(Eq(..), Show(..), Ord(..), Num(..), Floating(..), Fractional(..), Double, Int, Bool, Ordering(..), subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, (.), (++), (&&), ($!), error, id)
 import Control.Applicative(Const)
+import Control.Category(Category(id, (.)))
 import Control.Lens(Profunctor, Prism', Optic', Iso', (^.), (#), (^?), iso, _1, _2, from)
+import Data.Bool(Bool, (&&))
+import Data.Eq(Eq((==)))
 import Data.Functor(Functor)
+import Data.Int(Int)
+import Data.List((++))
 import Data.Maybe(fromMaybe)
+import Data.Ord(Ord((>=), (<), (>), compare), Ordering(GT, LT))
 import Data.Tuple(uncurry)
-import System.Args.Optional(Optional2(..))
-import Data.Geo.Coordinate
-import Data.Geo.Geodetic.Azimuth
-import Data.Geo.Geodetic.Bearing
-import Data.Geo.Geodetic.Ellipsoid
-import Data.Geo.Geodetic.Curve
-import Data.Radian
+import Data.Geo.Coordinate(AsCoordinate(_Coordinate), Coordinate, Latitude, Longitude, AsLatitude(_Latitude), AsLongitude(_Longitude), (.#.))
+import Data.Geo.Geodetic.Azimuth(modAzimuth)
+import Data.Geo.Geodetic.Bearing(AsBearing(_Bearing), Bearing)
+import Data.Geo.Geodetic.Ellipsoid(AsEllipsoid(_Ellipsoid), Ellipsoid, AsSemiMinor(_SemiMinor), AsSemiMajor(_SemiMajor), AsFlattening(_Flattening), wgs84)
+import Data.Geo.Geodetic.Curve(Curve, curve)
+import Data.Radian(toRadians)
+import Prelude(Show(show), Num((*), (+), (-), abs), Floating((**)), Fractional(..), Double, subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, ($!), error)
+import System.Args.Optional(Optional2(optional2))
 
 -- $setup
--- >>> import Prelude
+-- >>> import Control.Monad(Monad(return))
+-- >>> import Data.Functor(Functor(fmap))
+-- >>> import Data.Geo.Geodetic.Bearing(modBearing)
+-- >>> import Data.Geo.Geodetic.Ellipsoid(ans)
+-- >>> import Data.Geo.Coordinate((<°>))
 
 type Convergence =
   Double

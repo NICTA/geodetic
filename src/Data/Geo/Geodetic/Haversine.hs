@@ -19,6 +19,7 @@ import Prelude(Double, Num((*), (-), (+)), Fractional((/)), pi, sin, atan2, cos,
 
 -- $setup
 -- >>> import Prelude(Functor(..), Monad(..), String, Double)
+-- >>> import Data.Geo.Coordinate((<°>))
 -- >>> import Data.Maybe(Maybe)
 -- >>> import Text.Printf(printf)
 
