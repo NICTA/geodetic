@@ -4,7 +4,7 @@
 {-# LANGUAGE GADTs #-}
 
 -- | An implementation of Thaddeus Vincenty's direct and inverse geodetic algorithms. <http://www.ngs.noaa.gov/PUBS_LIB/inverse.pdf>
-module Data.Geo.Geodetic.Vincenty(
+module Data.Geo.Geodetic.Vincenty {-(
   Convergence
 , convergence
 , direct
@@ -14,7 +14,7 @@ module Data.Geo.Geodetic.Vincenty(
 , inverse
 , inverseD
 , inverse'
-) where
+) -} where
 
 import Prelude(Eq(..), Show(..), Ord(..), Num(..), Floating(..), Fractional(..), Double, Int, Bool, Ordering(..), subtract, cos, sin, asin, tan, sqrt, atan, atan2, pi, (.), (++), (&&), ($!), error, id)
 import Control.Applicative(Const)
@@ -28,6 +28,7 @@ import Data.Geo.Geodetic.Azimuth
 import Data.Geo.Geodetic.Bearing
 import Data.Geo.Geodetic.Ellipsoid
 import Data.Geo.Geodetic.Curve
+import Data.Radian
 
 -- $setup
 -- >>> import Prelude
@@ -95,10 +96,11 @@ direct e' conv start' bear' dist =
       radianLatitude = iso (\n -> n * 180 / pi) (\n -> n * pi / 180) . _Latitude
       e = e' ^. _Ellipsoid
       start = start' ^. _Coordinate
+      bear :: Bearing
       bear = bear' ^. _Bearing
       sMnr = e ^. _SemiMinor
       flat = e ^. _Flattening
-      alpha = _Bearing # bear
+      alpha = toRadians . _Bearing # bear
       cosAlpha = cos alpha
       sinAlpha = sin alpha
       tanu1 = (1.0 - flat) * tan (radianLatitude # (start ^. _Latitude))
@@ -139,7 +141,7 @@ direct e' conv start' bear' dist =
        (latitude' .#. longitude')
        (
          let r = atan2 csa (ccca - sss)
-         in fromMaybe (error ("Invariant not met. Bearing in radians not within range " ++ show r)) (r ^? _Bearing)
+         in fromMaybe (error ("Invariant not met. Bearing in radians not within range " ++ show r)) (r ^? toRadians . _Bearing)
        )
 
 -- | Vincenty direct algorithm with a default ellipsoid of WGS84 and standard convergence.

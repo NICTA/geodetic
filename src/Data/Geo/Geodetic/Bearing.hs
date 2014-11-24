@@ -9,10 +9,9 @@ module Data.Geo.Geodetic.Bearing(
 ) where
 
 import Control.Applicative(Applicative)
-import Prelude(Floating, Double, Eq, Show(..), Ord(..), id, (&&), (++), (.), showString, showParen)
+import Prelude(Double, Eq, Show(..), Ord(..), id, (&&), (++), showString, showParen)
 import Data.Bool(bool)
 import Data.Maybe(Maybe(..))
-import Data.Radian(Radian, radians)
 import Control.Lens(Choice, Optic', prism')
 import Text.Printf(printf)
 import Data.Fixed(mod')
@@ -90,28 +89,3 @@ instance (Choice p, Applicative f) => AsBearing p f Double where
       (\(Bearing i) -> i)
       (\i -> bool Nothing (Just (Bearing i)) (i >= 0 && i < 360))
 
--- | A prism on bearing to a double between 0 and π exclusive.
---
--- >>> (2 * pi - 0.0000000001 :: Radian Double) ^? _Bearing
--- Just (Bearing 360.0000)
---
--- >>> (0 :: Radian Double) ^? _Bearing
--- Just (Bearing 0.0000)
---
--- >>> (0.001 :: Radian Double) ^? _Bearing
--- Just (Bearing 0.0573)
---
--- >>> (1.78391 :: Radian Double) ^? _Bearing
--- Just (Bearing 102.2105)
---
--- >>> (pi :: Radian Double) ^? _Bearing
--- Just (Bearing 180.0000)
---
--- >>> (2 * pi :: Radian Double) ^? _Bearing
--- Nothing
---
--- >>> (-0.001 :: Radian Double) ^? _Bearing
--- Nothing
-instance (Choice p, Applicative f, Floating x, AsBearing p f x) => AsBearing p f (Radian x) where
-  _Bearing =
-    radians . _Bearing

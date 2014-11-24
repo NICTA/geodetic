@@ -31,8 +31,8 @@ library
   build-depends:
                     base < 5 && >= 3
                     , lens >= 4.0
-                    , coordinate >= 0.0.17
-                    , radian >= 0.0.2
+                    , coordinate >= 0.0.18
+                    , radian >= 0.0.4
                     , optional >= 0.0.1
 
   ghc-options:
