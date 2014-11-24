@@ -9,17 +9,22 @@ module Data.Geo.Geodetic.Bearing(
 ) where
 
 import Control.Applicative(Applicative)
-import Prelude(Double, Eq, Show(..), Ord(..), id, (&&), (++), showString, showParen)
-import Data.Bool(bool)
-import Data.Maybe(Maybe(..))
+import Control.Category(Category(id))
 import Control.Lens(Choice, Optic', prism')
-import Text.Printf(printf)
+import Data.Bool(bool, (&&))
+import Data.Eq(Eq)
 import Data.Fixed(mod')
+import Data.List((++))
+import Data.Maybe(Maybe(Nothing, Just))
+import Data.Ord(Ord((>), (>=), (<)))
+import Prelude(Double, Show(showsPrec), showString, showParen)
+import Text.Printf(printf)
 
 -- $setup
 -- >>> import Control.Lens((#), (^?))
+-- >>> import Data.Eq(Eq((==)))
 -- >>> import Data.Foldable(all)
--- >>> import Prelude(Eq(..), Num((*), (-)), Floating(pi))
+-- >>> import Prelude(Num((*), (-)), Floating(pi))
 
 newtype Bearing =
   Bearing Double
