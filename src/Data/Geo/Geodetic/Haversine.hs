@@ -10,11 +10,12 @@ module Data.Geo.Geodetic.Haversine(
 ) where
 
 import Control.Applicative(Const)
-import Prelude(Double, Num(..), Fractional(..), (.), pi, sin, atan2, cos, sqrt)
+import Control.Category(Category((.)))
 import Control.Lens((#), (^.))
-import System.Args.Optional(Optional1(..))
-import Data.Geo.Coordinate
-import Data.Geo.Geodetic.Sphere
+import System.Args.Optional(Optional1(optional1))
+import Data.Geo.Coordinate(AsCoordinate(_Coordinate), Coordinate, AsLongitude(_Longitude), AsLatitude(_Latitude))
+import Data.Geo.Geodetic.Sphere(AsSphere(_Sphere), Sphere, earthMean)
+import Prelude(Double, Num((*), (-), (+)), Fractional((/)), pi, sin, atan2, cos, sqrt)
 
 -- $setup
 -- >>> import Prelude(Functor(..), Monad(..), String, Double)
