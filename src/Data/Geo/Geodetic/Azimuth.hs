@@ -10,17 +10,21 @@ module Data.Geo.Geodetic.Azimuth(
 ) where
 
 import Control.Applicative(Applicative)
-import Prelude(Double, Eq, Show(..), Ord(..), id, (&&), (++), showParen, showString)
-import Data.Bool(bool)
-import Data.Maybe(Maybe(..))
+import Control.Category(Category(id))
+import Data.Bool(bool, (&&))
+import Data.Eq(Eq)
+import Data.List((++))
+import Data.Maybe(Maybe(Just, Nothing))
+import Data.Ord(Ord((>), (>=), (<)))
 import Control.Lens(Choice, Optic', prism')
-import Text.Printf(printf)
 import Data.Fixed(mod')
+import Prelude(Double, Show(showsPrec), showParen, showString)
+import Text.Printf(printf)
 
 -- $setup
 -- >>> import Control.Lens((#), (^?))
 -- >>> import Data.Foldable(all)
--- >>> import Prelude(Eq(..))
+-- >>> import Prelude(Eq((==)))
 
 newtype Azimuth =
   Azimuth Double
