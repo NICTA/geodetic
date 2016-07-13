@@ -16,6 +16,7 @@ module Data.Geo.Geodetic.Vincenty {-(
 , inverse'
 ) -} where
 
+{-
 import Control.Applicative(Const)
 import Control.Category(Category(id, (.)))
 import Control.Lens(Profunctor, Prism', Optic', Iso', (^.), (#), (^?), iso, _1, _2, from)
@@ -405,3 +406,5 @@ data Q = Q {
   sigma :: Double,
   deltasigma :: Double
 }
+
+-}

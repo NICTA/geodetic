@@ -1,12 +1,32 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 -- | Great circle geodetic distance algorithm.
-module Data.Geo.Geodetic.GreatCircle(
+module Data.Geo.Geodetic.GreatCircle {- (
   sphericalLaw
 , sphericalLawD
 , sphericalLaw'
-) where
+) -} where
 
+import Control.Lens
+import Data.Geo.Geodetic.Sphere
+import Data.Geodetic.LL
+import Prelude
+
+sphericalLaw ::
+  (HasLL ll1, HasLL ll2) =>
+  Sphere -- ^ reference sphere
+  -> ll1 -- ^ start coordinate
+  -> ll2 -- ^ end coordinate
+  -> Double
+sphericalLaw s start end =
+  let lat1 = start ^. lat
+      lon1 = start ^. lon
+      lat2 = end ^. lat
+      lon2 = end ^. lon
+  in acos (sin lat1 * sin lat2 + cos lat1 * cos lat2 * cos (lon2 - lon1)) * _Sphere # s
+
+
+{-
 import Control.Applicative(Const)
 import Control.Lens((#), (^.))
 import Data.Geo.Coordinate(AsCoordinate(_Coordinate), Coordinate, AsLongitude(_Longitude), AsLatitude(_Latitude))
@@ -82,3 +102,4 @@ sphericalLaw' ::
     x
 sphericalLaw' =
   optional1 (sphericalLaw :: Sphere -> Coordinate -> Coordinate -> Double) earthMean
+-}

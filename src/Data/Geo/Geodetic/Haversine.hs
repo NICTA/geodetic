@@ -3,12 +3,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | Haversine geodetic distance algorithm.
-module Data.Geo.Geodetic.Haversine(
+module Data.Geo.Geodetic.Haversine {- (
   haversine
 , haversineD
 , haversine'
-) where
+) -} where
 
+{-
 import Control.Applicative(Const)
 import Control.Category(Category((.)))
 import Control.Lens((#), (^.))
@@ -89,3 +90,4 @@ haversine' ::
     x
 haversine' =
   optional1 (haversine :: Sphere -> Coordinate -> Coordinate -> Double) earthMean
+-}
