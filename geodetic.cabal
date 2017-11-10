@@ -31,7 +31,7 @@ library
   build-depends:
                     base < 5 && >= 3
                     , lens >= 4.0
-                    , coordinate >= 0.0.18
+                    , coordinate >= 0.0.18 && < 0.0.20
                     , radian >= 0.0.4
                     , optional >= 0.0.1
 
